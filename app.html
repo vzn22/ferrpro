@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#09090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FerrPro">
+<title>FerrPro — App</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#09090b;--ink1:#111116;--ink2:#18181f;--ink3:#22222d;--ink4:#2e2e3d;
+  --wire:rgba(255,255,255,.07);--wire2:rgba(255,255,255,.12);
+  --gold:#e8a020;--gold2:#ffbe4d;--gold-g:rgba(232,160,32,.13);
+  --rose:#f43f5e;--rose-g:rgba(244,63,94,.13);
+  --lime:#84cc16;--lime-g:rgba(132,204,22,.13);
+  --sky:#38bdf8;--sky-g:rgba(56,189,248,.13);
+  --violet:#a78bfa;--violet-g:rgba(167,139,250,.13);
+  --snow:#fafafa;--mist:#71717a;--fog:#3f3f46;
+  --r:16px;--rs:10px;
+  --sans:'Figtree',sans-serif;--disp:'Bebas Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--ink);color:var(--snow);font-family:var(--sans);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+.screen,.topbar,.nav,#toast,.loading-screen{position:relative;z-index:1}
+
+/* LOADING */
+.loading-screen{position:fixed;inset:0;z-index:999;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-brand{font-family:var(--disp);font-size:48px;letter-spacing:4px;color:var(--snow)}
+.loading-brand em{color:var(--gold);font-style:normal}
+.loading-bar{width:120px;height:3px;background:var(--ink3);border-radius:3px;overflow:hidden}
+.loading-bar-inner{height:100%;background:var(--gold);border-radius:3px;animation:loadbar 1.5s ease infinite}
+@keyframes loadbar{0%{width:0%;margin-left:0}50%{width:80%;margin-left:0}100%{width:10%;margin-left:90%}}
+.loading-txt{font-size:12px;color:var(--mist);letter-spacing:1px}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(9,9,11,.92);backdrop-filter:blur(28px);border-bottom:1px solid var(--wire);padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:30px;height:30px;background:var(--gold);border-radius:8px;display:grid;place-items:center;font-size:15px;box-shadow:0 0 18px rgba(232,160,32,.4);flex-shrink:0}
+.brand-text{font-family:var(--disp);font-size:19px;letter-spacing:1.5px;line-height:1}
+.brand-text em{color:var(--gold);font-style:normal}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-empresa{font-size:11px;color:var(--mist);background:var(--ink2);border:1px solid var(--wire);padding:4px 10px;border-radius:20px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-logout{background:none;border:1px solid var(--wire2);color:var(--mist);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.btn-logout:hover{border-color:var(--rose);color:var(--rose)}
+
+/* SYNC indicator */
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime);display:inline-block;margin-right:4px}
+.sync-dot.syncing{background:var(--gold);box-shadow:0 0 6px var(--gold);animation:pulse .8s ease infinite}
+.sync-dot.err{background:var(--rose);box-shadow:0 0 6px var(--rose)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* NAV */
+.nav{display:flex;background:var(--ink1);border-bottom:1px solid var(--wire);overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{flex:1;min-width:48px;padding:10px 3px 8px;background:none;border:none;color:var(--fog);font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
+.nb .ni{font-size:18px;transition:transform .2s}
+.nb.on{color:var(--gold);border-bottom-color:var(--gold)}
+.nb.on .ni{transform:translateY(-1px)}
+.nb.epi-tab.on{color:var(--violet);border-bottom-color:var(--violet)}
+
+/* SCREENS */
+.screen{display:none;padding:16px 14px 40px;animation:up .22s ease}
+.screen.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* KPIS */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.kpi{background:var(--ink2);border:1px solid var(--wire);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-g::after{background:linear-gradient(90deg,var(--gold),transparent)}
+.kpi-r::after{background:linear-gradient(90deg,var(--rose),transparent)}
+.kpi-l::after{background:linear-gradient(90deg,var(--lime),transparent)}
+.kpi-v::after{background:linear-gradient(90deg,var(--violet),transparent)}
+.kpi-icon{font-size:18px;margin-bottom:7px;display:block;opacity:.8}
+.kpi-val{font-family:var(--disp);font-size:34px;letter-spacing:-1px;line-height:1}
+.kpi-lbl{font-size:10px;color:var(--mist);margin-top:3px;font-weight:500}
+
+/* CARDS */
+.card{background:var(--ink2);border:1px solid var(--wire);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ct{font-family:var(--disp);font-size:16px;letter-spacing:.8px;color:var(--snow);display:flex;align-items:center;gap:8px}
+.ct-pip{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);flex-shrink:0}
+.ct-pip.r{background:var(--rose);box-shadow:0 0 10px var(--rose)}
+.ct-pip.l{background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.ct-pip.v{background:var(--violet);box-shadow:0 0 10px var(--violet)}
+
+/* FORM */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--fog);margin-bottom:7px}
+.fi,.fs,.fta{width:100%;background:var(--ink3);border:1px solid var(--wire2);border-radius:var(--rs);padding:13px 14px;color:var(--snow);font-family:var(--sans);font-size:15px;font-weight:500;outline:none;transition:all .2s;-webkit-appearance:none;appearance:none}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--gold);background:rgba(232,160,32,.04);box-shadow:0 0 0 3px rgba(232,160,32,.09)}
+.fi::placeholder{color:var(--fog)}
+.fi[readonly]{color:var(--mist);cursor:default}
+.fta{resize:vertical;min-height:66px}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--fog);pointer-events:none;font-size:12px}
+.sw .fs{padding-right:36px}
+.epi-form .fi:focus,.epi-form .fs:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(167,139,250,.09)}
+
+/* BUTTONS */
+.btn{width:100%;padding:14px;border:none;border-radius:var(--rs);font-family:var(--disp);font-size:16px;letter-spacing:1.2px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.973);filter:brightness(.88)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-g{background:var(--gold);color:#000;box-shadow:0 8px 24px rgba(232,160,32,.25)}
+.btn-r{background:var(--rose);color:#fff;box-shadow:0 8px 24px rgba(244,63,94,.22)}
+.btn-v{background:var(--violet);color:#000;box-shadow:0 8px 24px rgba(167,139,250,.22)}
+.btn-ghost{background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)}
+.btn-danger{background:rgba(244,63,94,.1);color:var(--rose);border:1px solid rgba(244,63,94,.2)}
+.btn-sm{width:auto;padding:8px 14px;font-size:13px}
+
+/* LIST */
+.li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--wire)}
+.li:last-child{border-bottom:none}
+.li-inf{flex:1;min-width:0}
+.li-n{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-s{font-size:12px;color:var(--mist);margin-top:2px}
+
+/* BADGES */
+.bx{font-family:var(--disp);font-size:13px;letter-spacing:.5px;padding:4px 11px;border-radius:20px;white-space:nowrap}
+.bx-g{background:var(--gold-g);color:var(--gold2)}
+.bx-r{background:var(--rose-g);color:var(--rose)}
+.bx-l{background:var(--lime-g);color:var(--lime)}
+.bx-v{background:var(--violet-g);color:var(--violet)}
+
+/* STOCK ROWS */
+.sr{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--wire)}
+.sr:last-child{border-bottom:none}
+.sr-chip{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:5px 9px;border-radius:7px;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis}
+.sr-chip.ferr{background:var(--gold-g);color:var(--gold2)}
+.sr-chip.epi{background:var(--violet-g);color:var(--violet)}
+.sr-body{flex:1;min-width:0}
+.sr-name{font-size:14px;font-weight:600}
+.sr-hint{font-size:11px;color:var(--mist);margin-top:1px}
+.sr-n{font-family:var(--disp);font-size:26px;letter-spacing:-.5px;min-width:36px;text-align:right}
+
+/* HISTORY */
+.hc{background:var(--ink2);border:1px solid var(--wire);border-radius:var(--rs);padding:13px 14px;margin-bottom:9px;position:relative;overflow:hidden}
+.hc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.hc.saida::before{background:var(--rose)}
+.hc.entrada::before{background:var(--lime)}
+.hc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.hc-name{font-size:14px;font-weight:700}
+.hc-meta{font-size:12px;color:var(--mist);line-height:1.9}
+.hc-obs{margin-top:8px;font-size:11px;color:var(--mist);background:var(--ink3);border-radius:8px;padding:6px 10px;border-left:2px solid var(--wire2)}
+.hc-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:5px;margin-right:6px}
+.hc-tag.ferr{background:var(--gold-g);color:var(--gold2)}
+.hc-tag.epi{background:var(--violet-g);color:var(--violet)}
+
+/* TOGGLE */
+.tg{display:flex;background:var(--ink2);border:1px solid var(--wire);border-radius:var(--rs);padding:4px;margin-bottom:12px;gap:3px}
+.tb{flex:1;padding:9px 5px;border:none;border-radius:7px;background:none;color:var(--fog);font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.tb.on{background:var(--ink4);color:var(--snow);box-shadow:0 2px 10px rgba(0,0,0,.5)}
+
+/* SEARCH */
+.sq{display:flex;align-items:center;background:var(--ink2);border:1px solid var(--wire2);border-radius:var(--rs);padding:0 13px;margin-bottom:12px;transition:border-color .2s}
+.sq:focus-within{border-color:var(--gold)}
+.si{flex:1;background:none;border:none;color:var(--snow);font-family:var(--sans);font-size:15px;font-weight:500;padding:12px 0 12px 9px;outline:none}
+.si::placeholder{color:var(--fog)}
+
+/* SECTION LABELS */
+.slbl{font-family:var(--disp);font-size:12px;letter-spacing:2px;color:var(--fog);margin:2px 0 9px 2px;display:flex;align-items:center;gap:8px}
+.slbl::after{content:'';flex:1;height:1px;background:var(--wire)}
+
+/* PILL */
+.pc{font-size:11px;font-weight:700;background:var(--ink3);color:var(--mist);padding:3px 10px;border-radius:20px;border:1px solid var(--wire)}
+
+/* SUB TABS */
+.sub-tg{display:flex;gap:7px;margin-bottom:12px}
+.sub-tb{padding:7px 14px;border:1px solid var(--wire2);border-radius:20px;background:none;color:var(--mist);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.sub-tb.on-ferr{background:var(--gold-g);color:var(--gold2);border-color:rgba(232,160,32,.3)}
+.sub-tb.on-epi{background:var(--violet-g);color:var(--violet);border-color:rgba(167,139,250,.3)}
+
+/* EMPTY */
+.empty{text-align:center;padding:34px 18px;color:var(--fog)}
+.ei{font-size:36px;margin-bottom:9px;display:block;opacity:.35}
+.et{font-size:13px;font-weight:500}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--ink3);border:1px solid var(--wire2);border-radius:30px;padding:12px 22px;font-size:13px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(24px);max-width:88vw;text-align:center;white-space:nowrap;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--lime);color:var(--lime)}
+#toast.err{border-color:var(--rose);color:var(--rose)}
+#toast.info{border-color:var(--gold);color:var(--gold2)}
+
+.db{background:none;border:none;color:var(--fog);font-size:13px;cursor:pointer;padding:7px;border-radius:8px;transition:all .15s}
+.db:active{color:var(--rose);background:var(--rose-g)}
+.sl{max-height:280px;overflow-y:auto;scrollbar-width:none}
+.sl::-webkit-scrollbar{display:none}
+.spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(min-width:600px){.kpi-grid{grid-template-columns:repeat(4,1fr)}.screen{max-width:600px;margin:0 auto}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading">
+  <div class="loading-brand">Ferr<em>Pro</em></div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  <div class="loading-txt">Carregando...</div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar" style="display:none" id="topbar">
+  <div class="brand">
+    <div class="brand-mark">🔨</div>
+    <div class="brand-text">Ferr<em>Pro</em></div>
+  </div>
+  <div class="topbar-right">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="topbar-empresa" id="topbar-empresa">—</span>
+    <button class="btn-logout" onclick="doLogout()">Sair</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav" style="display:none" id="nav">
+  <button class="nb on"      onclick="go('dash',this)">    <span class="ni">◈</span>Painel</button>
+  <button class="nb"         onclick="go('saida',this)">   <span class="ni">↑</span>Saída</button>
+  <button class="nb"         onclick="go('entrada',this)"> <span class="ni">↓</span>Entrada</button>
+  <button class="nb epi-tab" onclick="go('epi',this)">     <span class="ni">🦺</span>EPI</button>
+  <button class="nb"         onclick="go('hist',this)">    <span class="ni">≡</span>Histórico</button>
+  <button class="nb"         onclick="go('cad',this)">     <span class="ni">⊕</span>Cadastro</button>
+</div>
+
+<!-- ══ PAINEL ══ -->
+<div id="sc-dash" class="screen on" style="display:none">
+  <div class="kpi-grid">
+    <div class="kpi kpi-g"><span class="kpi-icon">🔧</span><div class="kpi-val" id="k-ferr">0</div><div class="kpi-lbl">Ferramentas</div></div>
+    <div class="kpi kpi-v"><span class="kpi-icon">🦺</span><div class="kpi-val" id="k-epi">0</div><div class="kpi-lbl">EPIs</div></div>
+    <div class="kpi kpi-r"><span class="kpi-icon">↑</span><div class="kpi-val" id="k-sai">0</div><div class="kpi-lbl">Saídas</div></div>
+    <div class="kpi kpi-l"><span class="kpi-icon">↓</span><div class="kpi-val" id="k-ent">0</div><div class="kpi-lbl">Entradas</div></div>
+  </div>
+  <div class="sub-tg">
+    <button class="sub-tb on-ferr" onclick="dashSub('ferr',this)">🔧 Ferramentas</button>
+    <button class="sub-tb" onclick="dashSub('epi',this)">🦺 EPIs</button>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip" id="dash-pip"></span><span id="dash-est-title">Estoque</span></div><span class="pc" id="pc-est">—</span></div>
+    <div class="sl" id="d-est"><div class="empty"><span class="ei">🔧</span><div class="et">Nenhuma ferramenta cadastrada</div></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip"></span>Últimas Movimentações</div></div>
+    <div id="d-mov"><div class="empty"><span class="ei">📋</span><div class="et">Nenhuma movimentação ainda</div></div></div>
+  </div>
+</div>
+
+<!-- ══ SAÍDA FERRAMENTA ══ -->
+<div id="sc-saida" class="screen" style="display:none">
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip r"></span>Saída — Ferramenta</div></div>
+    <div class="fg"><label class="fl">Ferramenta</label><div class="sw"><select id="s-ferr" class="fs" onchange="atTipo('s')"><option value="">Selecione</option></select></div></div>
+    <div class="fg"><label class="fl">Tipo</label><input id="s-tipo" class="fi" readonly placeholder="Automático"></div>
+    <div class="fg"><label class="fl">Quantidade</label><input id="s-qtd" class="fi" type="number" min="1" value="1"></div>
+    <div class="fg"><label class="fl">Funcionário</label><div class="sw"><select id="s-func" class="fs"><option value="">Selecione</option></select></div></div>
+    <div class="fg"><label class="fl">Obra</label><div class="sw"><select id="s-obra" class="fs"><option value="">Selecione</option></select></div></div>
+    <div class="fg"><label class="fl">Responsável</label><div class="sw"><select id="s-resp" class="fs"><option value="">Opcional</option></select></div></div>
+    <div class="fg"><label class="fl">Observação</label><textarea id="s-obs" class="fta" placeholder="Opcional…"></textarea></div>
+    <button class="btn btn-r" id="btn-saida" onclick="regSaida()">↑ &nbsp;Confirmar Saída</button>
+  </div>
+</div>
+
+<!-- ══ ENTRADA FERRAMENTA ══ -->
+<div id="sc-entrada" class="screen" style="display:none">
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip l"></span>Entrada — Ferramenta</div></div>
+    <div class="fg"><label class="fl">Ferramenta</label><div class="sw"><select id="e-ferr" class="fs" onchange="atTipo('e')"><option value="">Selecione</option></select></div></div>
+    <div class="fg"><label class="fl">Tipo</label><input id="e-tipo" class="fi" readonly placeholder="Automático"></div>
+    <div class="fg"><label class="fl">Quantidade</label><input id="e-qtd" class="fi" type="number" min="1" value="1"></div>
+    <div class="fg"><label class="fl">Funcionário</label><div class="sw"><select id="e-func" class="fs"><option value="">Opcional</option></select></div></div>
+    <div class="fg"><label class="fl">Obra</label><div class="sw"><select id="e-obra" class="fs"><option value="">Opcional</option></select></div></div>
+    <div class="fg"><label class="fl">Responsável</label><div class="sw"><select id="e-resp" class="fs"><option value="">Opcional</option></select></div></div>
+    <div class="fg"><label class="fl">Observação</label><textarea id="e-obs" class="fta" placeholder="Opcional…"></textarea></div>
+    <button class="btn btn-g" id="btn-entrada" onclick="regEntrada()">↓ &nbsp;Confirmar Entrada</button>
+  </div>
+</div>
+
+<!-- ══ EPI ══ -->
+<div id="sc-epi" class="screen" style="display:none">
+  <div class="tg">
+    <button class="tb on" onclick="epiSub('saida',this)">↑ Saída</button>
+    <button class="tb" onclick="epiSub('entrada',this)">↓ Entrada</button>
+    <button class="tb" onclick="epiSub('estoque',this)">📦 Estoque</button>
+  </div>
+  <div id="epi-saida-form">
+    <div class="card epi-form">
+      <div class="ch"><div class="ct"><span class="ct-pip r"></span>Saída — EPI</div></div>
+      <div class="fg"><label class="fl">EPI</label><div class="sw"><select id="es-epi" class="fs" onchange="atEpiInfo('es')"><option value="">Selecione</option></select></div></div>
+      <div class="fg"><label class="fl">Categoria</label><input id="es-cat" class="fi" readonly placeholder="Automático"></div>
+      <div class="fg"><label class="fl">Nº CA</label><input id="es-ca" class="fi" readonly placeholder="Automático"></div>
+      <div class="fg"><label class="fl">Quantidade</label><input id="es-qtd" class="fi" type="number" min="1" value="1"></div>
+      <div class="fg"><label class="fl">Funcionário</label><div class="sw"><select id="es-func" class="fs"><option value="">Selecione</option></select></div></div>
+      <div class="fg"><label class="fl">Obra</label><div class="sw"><select id="es-obra" class="fs"><option value="">Selecione</option></select></div></div>
+      <div class="fg"><label class="fl">Responsável</label><div class="sw"><select id="es-resp" class="fs"><option value="">Opcional</option></select></div></div>
+      <div class="fg"><label class="fl">Motivo</label><textarea id="es-obs" class="fta" placeholder="Ex: Substituição por desgaste…"></textarea></div>
+      <button class="btn btn-r" id="btn-es" onclick="regEpiSaida()">↑ &nbsp;Confirmar Saída EPI</button>
+    </div>
+  </div>
+  <div id="epi-entrada-form" style="display:none">
+    <div class="card epi-form">
+      <div class="ch"><div class="ct"><span class="ct-pip l"></span>Entrada — EPI</div></div>
+      <div class="fg"><label class="fl">EPI</label><div class="sw"><select id="ee-epi" class="fs" onchange="atEpiInfo('ee')"><option value="">Selecione</option></select></div></div>
+      <div class="fg"><label class="fl">Categoria</label><input id="ee-cat" class="fi" readonly placeholder="Automático"></div>
+      <div class="fg"><label class="fl">Nº CA</label><input id="ee-ca" class="fi" readonly placeholder="Automático"></div>
+      <div class="fg"><label class="fl">Quantidade</label><input id="ee-qtd" class="fi" type="number" min="1" value="1"></div>
+      <div class="fg"><label class="fl">Funcionário</label><div class="sw"><select id="ee-func" class="fs"><option value="">Opcional</option></select></div></div>
+      <div class="fg"><label class="fl">Obra</label><div class="sw"><select id="ee-obra" class="fs"><option value="">Opcional</option></select></div></div>
+      <div class="fg"><label class="fl">Observação</label><textarea id="ee-obs" class="fta" placeholder="Opcional…"></textarea></div>
+      <button class="btn btn-v" id="btn-ee" onclick="regEpiEntrada()">↓ &nbsp;Confirmar Entrada EPI</button>
+    </div>
+  </div>
+  <div id="epi-estoque-view" style="display:none">
+    <div class="card">
+      <div class="ch"><div class="ct"><span class="ct-pip v"></span>Estoque de EPIs</div><span class="pc" id="pc-epi-est">0</span></div>
+      <div class="sl" id="epi-est-lista"><div class="empty"><span class="ei">🦺</span><div class="et">Nenhum EPI cadastrado</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HISTÓRICO ══ -->
+<div id="sc-hist" class="screen" style="display:none">
+  <div class="tg">
+    <button class="tb on" onclick="setF('todos',this)">Todos</button>
+    <button class="tb" onclick="setF('fsaidas',this)">↑ Ferr</button>
+    <button class="tb" onclick="setF('fentradas',this)">↓ Ferr</button>
+    <button class="tb" onclick="setF('esaidas',this)">↑ EPI</button>
+    <button class="tb" onclick="setF('eentradas',this)">↓ EPI</button>
+  </div>
+  <div class="sq"><span style="color:var(--fog);font-size:15px">⌕</span><input class="si" placeholder="Buscar…" oninput="setB(this.value)"></div>
+  <div id="h-lista"><div class="empty"><span class="ei">📋</span><div class="et">Nenhuma movimentação</div></div></div>
+</div>
+
+<!-- ══ CADASTRO ══ -->
+<div id="sc-cad" class="screen" style="display:none">
+  <div class="slbl">🔧 Ferramentas</div>
+  <div class="card">
+    <div class="fg"><label class="fl">Tipo</label><input id="c-tipo" class="fi" placeholder="Ex: FERRAMENTA, EPI…"></div>
+    <div class="fg"><label class="fl">Nome</label><input id="c-ferr" class="fi" placeholder="Ex: Martelo, Colher…"></div>
+    <div class="fg"><label class="fl">Qtd Inicial</label><input id="c-qtdi" class="fi" type="number" min="0" value="0"></div>
+    <button class="btn btn-g" id="btn-cad-ferr" onclick="cadF()">+ Adicionar Ferramenta</button>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip"></span>Cadastradas</div><span class="pc" id="pc-ferr">0</span></div>
+    <div class="sl" id="l-ferr"><div class="empty"><span class="ei">🔧</span><div class="et">Nenhuma</div></div></div>
+  </div>
+
+  <div class="slbl">🦺 EPIs (NR-6)</div>
+  <div class="card epi-form">
+    <div class="fg"><label class="fl">Categoria</label>
+      <div class="sw"><select id="c-epi-cat" class="fs">
+        <option value="">Selecione</option>
+        <option>PROTEÇÃO DA CABEÇA</option>
+        <option>PROTEÇÃO DOS OLHOS E ROSTO</option>
+        <option>PROTEÇÃO AUDITIVA</option>
+        <option>PROTEÇÃO RESPIRATÓRIA</option>
+        <option>PROTEÇÃO DO TRONCO</option>
+        <option>PROTEÇÃO DOS MEMBROS SUPERIORES</option>
+        <option>PROTEÇÃO DOS MEMBROS INFERIORES</option>
+        <option>PROTEÇÃO CONTRA QUEDAS</option>
+        <option>PROTEÇÃO CONTRA CALOR / FOGO</option>
+        <option>PROTEÇÃO QUÍMICA</option>
+        <option>OUTRO</option>
+      </select></div>
+    </div>
+    <div class="fg"><label class="fl">Nome do EPI</label><input id="c-epi-nome" class="fi" placeholder="Ex: Capacete, Luva Nitrílica…"></div>
+    <div class="fg"><label class="fl">Nº CA / CC</label><input id="c-epi-ca" class="fi" placeholder="Ex: CA-12345"></div>
+    <div class="fg"><label class="fl">Qtd Inicial</label><input id="c-epi-qtd" class="fi" type="number" min="0" value="0"></div>
+    <button class="btn btn-v" id="btn-cad-epi" onclick="cadEpi()">+ Adicionar EPI</button>
+    <div style="margin-top:10px"><button class="btn btn-ghost" onclick="importarEpisNR6()" style="font-size:13px">⬇️ Importar EPIs padrão NR-6</button></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip v"></span>EPIs Cadastrados</div><span class="pc" id="pc-epi">0</span></div>
+    <div class="sl" id="l-epi"><div class="empty"><span class="ei">🦺</span><div class="et">Nenhum EPI</div></div></div>
+  </div>
+
+  <div class="slbl">👷 Funcionários</div>
+  <div class="card">
+    <div class="fg"><label class="fl">Nome</label><input id="c-func" class="fi" placeholder="Ex: João Silva"></div>
+    <button class="btn btn-ghost" id="btn-cad-func" onclick="cadFn()">+ Adicionar Funcionário</button>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip"></span>Cadastrados</div><span class="pc" id="pc-func">0</span></div>
+    <div class="sl" id="l-func"><div class="empty"><span class="ei">👤</span><div class="et">Nenhum</div></div></div>
+  </div>
+
+  <div class="slbl">👔 Responsáveis</div>
+  <div class="card">
+    <div class="fg"><label class="fl">Nome</label><input id="c-resp" class="fi" placeholder="Ex: Carlos Mestre"></div>
+    <button class="btn btn-ghost" onclick="cadR()">+ Adicionar Responsável</button>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip"></span>Cadastrados</div><span class="pc" id="pc-resp">0</span></div>
+    <div class="sl" id="l-resp"><div class="empty"><span class="ei">👔</span><div class="et">Nenhum</div></div></div>
+  </div>
+
+  <div class="slbl">🏗️ Obras</div>
+  <div class="card">
+    <div class="fg"><label class="fl">Nome / Código</label><input id="c-obra" class="fi" placeholder="Ex: Obra Centro…"></div>
+    <button class="btn btn-ghost" onclick="cadO()">+ Adicionar Obra</button>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct"><span class="ct-pip"></span>Cadastradas</div><span class="pc" id="pc-obra">0</span></div>
+    <div class="sl" id="l-obra"><div class="empty"><span class="ei">🏗️</span><div class="et">Nenhuma</div></div></div>
+  </div>
+
+  <div class="slbl">📂 Exportar</div>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="csv('fsaidas')">↑ Ferr Saídas</button>
+      <button class="btn btn-ghost btn-sm" onclick="csv('fentradas')">↓ Ferr Ent.</button>
+      <button class="btn btn-ghost btn-sm" onclick="csv('esaidas')">↑ EPI Saídas</button>
+      <button class="btn btn-ghost btn-sm" onclick="csv('eentradas')">↓ EPI Ent.</button>
+      <button class="btn btn-ghost btn-sm" onclick="csv('estoque')">📦 Estoque</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// ⚠️  SUBSTITUA ESTAS DUAS LINHAS
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://cahyauugshenwqbxvigg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
+// ══════════════════════════════════════════
+
+const isConfigured = true;
+let sb = null;
+let USER = null;
+let COMPANY_ID = null;
+
+// LOCAL cache (fallback quando Supabase não configurado)
+let local = {
+  ferramentas:[],epis:[],funcionarios:[],responsaveis:[],obras:[],
+  fsaidas:[],fentradas:[],esaidas:[],eentradas:[]
+};
+
+if(isConfigured){
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+/* ══ INIT ══ */
+async function init(){
+  if(!isConfigured){
+    // Modo offline/demo sem Supabase
+    document.getElementById('loading').style.display='none';
+    document.getElementById('topbar').style.display='flex';
+    document.getElementById('nav').style.display='flex';
+    document.querySelectorAll('.screen').forEach(s=>s.style.display='');
+    document.getElementById('topbar-empresa').textContent='DEMO';
+    const dot=document.getElementById('sync-dot');
+    dot.className='sync-dot err';
+    dot.title='Configure Supabase para sincronização';
+    loadLocal();
+    renderDash();
+    return;
+  }
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){ window.location.href='login.html'; return; }
+    USER=session.user;
+    COMPANY_ID=USER.user_metadata?.empresa||USER.email;
+    document.getElementById('topbar-empresa').textContent=COMPANY_ID.substring(0,15);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('topbar').style.display='flex';
+    document.getElementById('nav').style.display='flex';
+    document.querySelectorAll('.screen').forEach(s=>s.style.display='');
+    await loadAll();
+    renderDash();
+  }catch(e){
+    window.location.href='login.html';
+  }
+}
+
+function loadLocal(){
+  try{const r=localStorage.getItem('ferrpro_local');if(r)local=JSON.parse(r)}catch(e){}
+}
+function saveLocal(){localStorage.setItem('ferrpro_local',JSON.stringify(local))}
+
+/* ══ SYNC DOT ══ */
+function setSyncing(v){
+  const d=document.getElementById('sync-dot');
+  d.className='sync-dot'+(v?' syncing':'');
+}
+
+/* ══ LOAD ALL FROM SUPABASE ══ */
+async function loadAll(){
+  if(!isConfigured){loadLocal();return}
+  setSyncing(true);
+  try{
+    // Load all data for this company
+    const uid=USER.id;
+    const [f,e,fn,r,o,fs,fe,es,ee]=await Promise.all([
+      sb.from('ferramentas').select('*').eq('user_id',uid),
+      sb.from('epis').select('*').eq('user_id',uid),
+      sb.from('funcionarios').select('*').eq('user_id',uid),
+      sb.from('responsaveis').select('*').eq('user_id',uid),
+      sb.from('obras').select('*').eq('user_id',uid),
+      sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(200),
+      sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(200),
+      sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(200),
+      sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(200),
+    ]);
+    local.ferramentas=(f.data||[]);
+    local.epis=(e.data||[]);
+    local.funcionarios=(fn.data||[]).map(x=>x.nome);
+    local.responsaveis=(r.data||[]).map(x=>x.nome);
+    local.obras=(o.data||[]).map(x=>x.nome);
+    local.fsaidas=(fs.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade}));
+    local.fentradas=(fe.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade}));
+    local.esaidas=(es.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade}));
+    local.eentradas=(ee.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade}));
+    saveLocal();
+  }catch(ex){console.error(ex)}
+  setSyncing(false);
+}
+
+/* ══ ESTOQUE ══ */
+function estF(){
+  return local.ferramentas.map(f=>{
+    let q=f.qi||f.qtd_inicial||0;
+    local.fentradas.forEach(e=>{if((e.ferramenta||e.ferramenta_nome)===f.nome)q+=e.qtd||e.quantidade||0});
+    local.fsaidas.forEach(s=>{if((s.ferramenta||s.ferramenta_nome)===f.nome)q-=s.qtd||s.quantidade||0});
+    return{...f,q};
+  });
+}
+function estE(){
+  return local.epis.map(e=>{
+    let q=e.qi||e.qtd_inicial||0;
+    local.eentradas.forEach(en=>{if((en.epi||en.epi_nome)===e.nome)q+=en.qtd||en.quantidade||0});
+    local.esaidas.forEach(s=>{if((s.epi||s.epi_nome)===e.nome)q-=s.qtd||s.quantidade||0});
+    return{...e,q};
+  });
+}
+
+/* ══ TOAST ══ */
+function toast(msg,t='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+t;setTimeout(()=>el.className='',2700)}
+
+/* ══ NAV ══ */
+function go(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sc-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='dash')renderDash();
+  if(name==='hist')renderHist();
+  if(name==='cad')renderCad();
+  if(name==='saida')fillSel('s');
+  if(name==='entrada')fillSel('e');
+  if(name==='epi'){fillEpiSels();renderEpiEst()}
+}
+
+/* ══ SELECTS ══ */
+function fillSel(p){
+  const g=id=>document.getElementById(p+'-'+id);
+  const fe=g('ferr');if(!fe)return;
+  const fv=fe.value;
+  fe.innerHTML='<option value="">Selecione</option>';
+  local.ferramentas.forEach(f=>{const o=document.createElement('option');o.value=f.nome;o.textContent=f.nome;if(f.nome===fv)o.selected=true;fe.appendChild(o)});
+  const map={func:[local.funcionarios,'Selecione','Opcional'],obra:[local.obras,'Selecione','Opcional'],resp:[local.responsaveis,'Opcional','Opcional']};
+  Object.entries(map).forEach(([k,[list,ph]])=>{
+    const el=g(k);if(!el)return;const cv=el.value;
+    el.innerHTML=`<option value="">${ph}</option>`;
+    list.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===cv)o.selected=true;el.appendChild(o)});
+  });
+}
+function atTipo(p){const nome=document.getElementById(p+'-ferr').value;const f=local.ferramentas.find(x=>x.nome===nome);document.getElementById(p+'-tipo').value=f?f.tipo:''}
+
+function fillEpiSels(){
+  ['es','ee'].forEach(p=>{
+    const g=id=>document.getElementById(p+'-'+id);
+    const sel=g('epi');if(!sel)return;
+    const cv=sel.value;sel.innerHTML='<option value="">Selecione</option>';
+    local.epis.forEach(e=>{const o=document.createElement('option');o.value=e.nome;o.textContent=e.nome;if(e.nome===cv)o.selected=true;sel.appendChild(o)});
+    ['func','obra','resp'].forEach(k=>{
+      const el=g(k);if(!el)return;const v=el.value;
+      const ph={func:'Selecione',obra:'Selecione',resp:'Opcional'};
+      const list={func:local.funcionarios,obra:local.obras,resp:local.responsaveis};
+      el.innerHTML=`<option value="">${ph[k]}</option>`;
+      list[k].forEach(x=>{const o=document.createElement('option');o.value=x;o.textContent=x;if(x===v)o.selected=true;el.appendChild(o)});
+    });
+  });
+}
+function atEpiInfo(p){
+  const nome=document.getElementById(p+'-epi').value;
+  const e=local.epis.find(x=>x.nome===nome);
+  document.getElementById(p+'-cat').value=e?e.cat:'';
+  document.getElementById(p+'-ca').value=e?e.ca:'';
+}
+function epiSub(mode,btn){
+  document.querySelectorAll('.tg .tb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  document.getElementById('epi-saida-form').style.display=mode==='saida'?'':'none';
+  document.getElementById('epi-entrada-form').style.display=mode==='entrada'?'':'none';
+  document.getElementById('epi-estoque-view').style.display=mode==='estoque'?'':'none';
+  if(mode==='estoque')renderEpiEst();
+}
+
+let dashMode='ferr';
+function dashSub(mode,btn){
+  dashMode=mode;
+  document.querySelectorAll('.sub-tb').forEach(b=>{b.classList.remove('on-ferr','on-epi')});
+  btn.classList.add(mode==='ferr'?'on-ferr':'on-epi');
+  renderDash();
+}
+
+/* ══ SAVE TO SUPABASE OR LOCAL ══ */
+async function saveRow(table,data){
+  if(!isConfigured){saveLocal();return true}
+  setSyncing(true);
+  const {error}=await sb.from(table).insert({...data,user_id:USER.id});
+  setSyncing(false);
+  if(error){console.error(error);return false}
+  return true;
+}
+async function saveSimple(table,nome){
+  if(!isConfigured){saveLocal();return true}
+  setSyncing(true);
+  const {error}=await sb.from(table).insert({nome,user_id:USER.id});
+  setSyncing(false);
+  if(error){console.error(error);return false}
+  return true;
+}
+async function deleteRow(table,nome){
+  if(!isConfigured){saveLocal();return true}
+  setSyncing(true);
+  await sb.from(table).delete().eq('nome',nome).eq('user_id',USER.id);
+  setSyncing(false);
+  return true;
+}
+
+/* ══ SAÍDA FERRAMENTA ══ */
+async function regSaida(){
+  const ferr=document.getElementById('s-ferr').value;
+  const qtd=parseInt(document.getElementById('s-qtd').value)||0;
+  const func=document.getElementById('s-func').value;
+  const obra=document.getElementById('s-obra').value;
+  const resp=document.getElementById('s-resp').value;
+  const obs=document.getElementById('s-obs').value.trim();
+  if(!ferr)return toast('Selecione a ferramenta','err');
+  if(qtd<=0)return toast('Quantidade inválida','err');
+  if(!func)return toast('Selecione o funcionário','err');
+  if(!obra)return toast('Selecione a obra','err');
+  const ef=estF().find(x=>x.nome===ferr);
+  if(ef&&ef.q<qtd)return toast(`Estoque insuficiente — disponível: ${ef.q}`,'err');
+  const f=local.ferramentas.find(x=>x.nome===ferr);
+  const n=new Date();
+  const row={tipo:'saida',ferramenta_nome:ferr,quantidade:qtd,funcionario:func,obra,responsavel:resp||'—',obs,tipo_ferramenta:f?f.tipo:'',data:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+  local.fsaidas.unshift({...row,ferramenta:ferr,qtd});
+  const ok=await saveRow('mov_ferramentas',row);
+  if(!ok)toast('Erro ao salvar na nuvem','err');
+  saveLocal();renderDash();
+  document.getElementById('s-qtd').value='1';document.getElementById('s-obs').value='';
+  toast(`↑ Saída: ${qtd}× ${ferr}`,'ok');
+}
+
+/* ══ ENTRADA FERRAMENTA ══ */
+async function regEntrada(){
+  const ferr=document.getElementById('e-ferr').value;
+  const qtd=parseInt(document.getElementById('e-qtd').value)||0;
+  const func=document.getElementById('e-func').value;
+  const obra=document.getElementById('e-obra').value;
+  const obs=document.getElementById('e-obs').value.trim();
+  if(!ferr)return toast('Selecione a ferramenta','err');
+  if(qtd<=0)return toast('Quantidade inválida','err');
+  const f=local.ferramentas.find(x=>x.nome===ferr);
+  const n=new Date();
+  const row={tipo:'entrada',ferramenta_nome:ferr,quantidade:qtd,funcionario:func||'—',obra:obra||'—',responsavel:'—',obs,tipo_ferramenta:f?f.tipo:'',data:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+  local.fentradas.unshift({...row,ferramenta:ferr,qtd});
+  await saveRow('mov_ferramentas',row);
+  saveLocal();renderDash();
+  document.getElementById('e-qtd').value='1';document.getElementById('e-obs').value='';
+  toast(`↓ Entrada: ${qtd}× ${ferr}`,'ok');
+}
+
+/* ══ SAÍDA EPI ══ */
+async function regEpiSaida(){
+  const epi=document.getElementById('es-epi').value;
+  const qtd=parseInt(document.getElementById('es-qtd').value)||0;
+  const func=document.getElementById('es-func').value;
+  const obra=document.getElementById('es-obra').value;
+  const obs=document.getElementById('es-obs').value.trim();
+  if(!epi)return toast('Selecione o EPI','err');
+  if(qtd<=0)return toast('Quantidade inválida','err');
+  if(!func)return toast('Selecione o funcionário','err');
+  if(!obra)return toast('Selecione a obra','err');
+  const ee=estE().find(x=>x.nome===epi);
+  if(ee&&ee.q<qtd)return toast(`Estoque insuficiente — disponível: ${ee.q}`,'err');
+  const ep=local.epis.find(x=>x.nome===epi);
+  const n=new Date();
+  const row={tipo:'saida',epi_nome:epi,quantidade:qtd,funcionario:func,obra,responsavel:'—',obs,cat:ep?ep.cat:'',ca:ep?ep.ca:'',data:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+  local.esaidas.unshift({...row,epi,qtd});
+  await saveRow('mov_epis',row);
+  saveLocal();renderDash();renderEpiEst();
+  document.getElementById('es-qtd').value='1';document.getElementById('es-obs').value='';
+  toast(`↑ EPI saída: ${qtd}× ${epi}`,'ok');
+}
+
+/* ══ ENTRADA EPI ══ */
+async function regEpiEntrada(){
+  const epi=document.getElementById('ee-epi').value;
+  const qtd=parseInt(document.getElementById('ee-qtd').value)||0;
+  const obs=document.getElementById('ee-obs').value.trim();
+  if(!epi)return toast('Selecione o EPI','err');
+  if(qtd<=0)return toast('Quantidade inválida','err');
+  const ep=local.epis.find(x=>x.nome===epi);
+  const func=document.getElementById('ee-func').value;
+  const obra=document.getElementById('ee-obra').value;
+  const n=new Date();
+  const row={tipo:'entrada',epi_nome:epi,quantidade:qtd,funcionario:func||'—',obra:obra||'—',responsavel:'—',obs,cat:ep?ep.cat:'',ca:ep?ep.ca:'',data:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+  local.eentradas.unshift({...row,epi,qtd});
+  await saveRow('mov_epis',row);
+  saveLocal();renderDash();renderEpiEst();
+  document.getElementById('ee-qtd').value='1';document.getElementById('ee-obs').value='';
+  toast(`↓ EPI entrada: ${qtd}× ${epi}`,'ok');
+}
+
+/* ══ DASHBOARD ══ */
+function renderDash(){
+  const ef=estF(),ee=estE();
+  document.getElementById('k-ferr').textContent=local.ferramentas.length;
+  document.getElementById('k-epi').textContent=local.epis.length;
+  document.getElementById('k-sai').textContent=local.fsaidas.length+local.esaidas.length;
+  document.getElementById('k-ent').textContent=local.fentradas.length+local.eentradas.length;
+  const isEpi=dashMode==='epi';
+  document.getElementById('dash-est-title').textContent=isEpi?'Estoque EPIs':'Estoque Ferramentas';
+  const pip=document.getElementById('dash-pip');pip.className='ct-pip'+(isEpi?' v':'');
+  const items=isEpi?ee:ef;
+  document.getElementById('pc-est').textContent=items.length+' itens';
+  const de=document.getElementById('d-est');
+  de.innerHTML=items.length===0
+    ?`<div class="empty"><span class="ei">${isEpi?'🦺':'🔧'}</span><div class="et">Nenhum cadastrado</div></div>`
+    :items.map(x=>{
+      const c=x.q<=0?'var(--rose)':x.q<=5?'var(--gold2)':'var(--lime)';
+      return`<div class="sr"><div class="sr-chip ${isEpi?'epi':'ferr'}">${((isEpi?x.cat:x.tipo)||'—').split(' ').slice(0,2).join(' ')}</div><div class="sr-body"><div class="sr-name">${x.nome}</div><div class="sr-hint">${isEpi?x.ca||'—':'em estoque'}</div></div><div class="sr-n" style="color:${c}">${x.q}</div></div>`;
+    }).join('');
+  const todas=[
+    ...local.fsaidas.map(s=>({...s,_t:'saida',_m:'ferr',_label:s.ferramenta||s.ferramenta_nome})),
+    ...local.fentradas.map(e=>({...e,_t:'entrada',_m:'ferr',_label:e.ferramenta||e.ferramenta_nome})),
+    ...local.esaidas.map(s=>({...s,_t:'saida',_m:'epi',_label:s.epi||s.epi_nome})),
+    ...local.eentradas.map(e=>({...e,_t:'entrada',_m:'epi',_label:e.epi||e.epi_nome}))
+  ].slice(0,6);
+  const dm=document.getElementById('d-mov');
+  dm.innerHTML=todas.length===0
+    ?`<div class="empty"><span class="ei">📋</span><div class="et">Nenhuma movimentação ainda</div></div>`
+    :todas.map(m=>`<div class="li"><div class="li-inf"><div class="li-n"><span class="hc-tag ${m._m}">${m._m.toUpperCase()}</span>${m._label}</div><div class="li-s">${m.data} ${m.hora||''} · ${m.obra} · ${m.funcionario}</div></div><span class="bx ${m._t==='saida'?'bx-r':'bx-l'}">${m._t==='saida'?'↑':'↓'}${m.qtd||m.quantidade}</span></div>`).join('');
+}
+
+/* ══ ESTOQUE EPI ══ */
+function renderEpiEst(){
+  const e=estE();
+  document.getElementById('pc-epi-est').textContent=e.length+' itens';
+  const el=document.getElementById('epi-est-lista');
+  el.innerHTML=e.length===0
+    ?`<div class="empty"><span class="ei">🦺</span><div class="et">Nenhum EPI cadastrado</div></div>`
+    :e.map(ep=>{const c=ep.q<=0?'var(--rose)':ep.q<=5?'var(--gold2)':'var(--lime)';return`<div class="sr"><div class="sr-chip epi">${(ep.cat||'EPI').split(' ')[1]||'EPI'}</div><div class="sr-body"><div class="sr-name">${ep.nome}</div><div class="sr-hint">${ep.ca||'—'}</div></div><div class="sr-n" style="color:${c}">${ep.q}</div></div>`}).join('');
+}
+
+/* ══ HISTÓRICO ══ */
+let fil='todos',bus='';
+function setF(f,btn){fil=f;document.querySelectorAll('.tg .tb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderHist()}
+function setB(v){bus=v.toLowerCase();renderHist()}
+function renderHist(){
+  const fs=local.fsaidas.map(s=>({...s,_t:'saida',_m:'ferr',_label:s.ferramenta||s.ferramenta_nome,qtd:s.qtd||s.quantidade}));
+  const fe=local.fentradas.map(e=>({...e,_t:'entrada',_m:'ferr',_label:e.ferramenta||e.ferramenta_nome,qtd:e.qtd||e.quantidade}));
+  const es=local.esaidas.map(s=>({...s,_t:'saida',_m:'epi',_label:s.epi||s.epi_nome,qtd:s.qtd||s.quantidade}));
+  const ee=local.eentradas.map(e=>({...e,_t:'entrada',_m:'epi',_label:e.epi||e.epi_nome,qtd:e.qtd||e.quantidade}));
+  let lista=[];
+  if(fil==='todos')lista=[...fs,...fe,...es,...ee];
+  else if(fil==='fsaidas')lista=fs;
+  else if(fil==='fentradas')lista=fe;
+  else if(fil==='esaidas')lista=es;
+  else lista=ee;
+  if(bus)lista=lista.filter(m=>(m._label||'').toLowerCase().includes(bus)||(m.obra||'').toLowerCase().includes(bus)||(m.funcionario||'').toLowerCase().includes(bus));
+  const el=document.getElementById('h-lista');
+  el.innerHTML=lista.length===0
+    ?`<div class="empty"><span class="ei">📋</span><div class="et">Nenhuma movimentação encontrada</div></div>`
+    :lista.map(m=>`<div class="hc ${m._t}"><div class="hc-top"><span class="hc-name"><span class="hc-tag ${m._m}">${m._m.toUpperCase()}</span>${m._label}</span><span class="bx ${m._t==='saida'?'bx-r':'bx-l'}">${m._t==='saida'?'↑':'↓'} ${m.qtd} un</span></div><div class="hc-meta">🏗️ ${m.obra} &nbsp;·&nbsp; 👷 ${m.funcionario}<br>📅 ${m.data} ${m.hora||''}</div>${m.obs?`<div class="hc-obs">💬 ${m.obs}</div>`:''}</div>`).join('');
+}
+
+/* ══ CADASTRO ══ */
+async function cadF(){
+  const tipo=document.getElementById('c-tipo').value.trim().toUpperCase();
+  const nome=document.getElementById('c-ferr').value.trim().toUpperCase();
+  const qi=parseInt(document.getElementById('c-qtdi').value)||0;
+  if(!tipo||!nome)return toast('Preencha tipo e nome','err');
+  if(local.ferramentas.find(f=>f.nome===nome))return toast('Já cadastrada','err');
+  local.ferramentas.push({tipo,nome,qi});
+  if(isConfigured){setSyncing(true);await sb.from('ferramentas').insert({tipo,nome,qi,user_id:USER.id});setSyncing(false)}
+  saveLocal();renderCad();renderDash();
+  document.getElementById('c-tipo').value='';document.getElementById('c-ferr').value='';document.getElementById('c-qtdi').value='0';
+  toast(`✓ ${nome} cadastrada`,'ok');
+}
+async function cadEpi(){
+  const cat=document.getElementById('c-epi-cat').value;
+  const nome=document.getElementById('c-epi-nome').value.trim().toUpperCase();
+  const ca=document.getElementById('c-epi-ca').value.trim().toUpperCase();
+  const qi=parseInt(document.getElementById('c-epi-qtd').value)||0;
+  if(!cat||!nome)return toast('Preencha categoria e nome','err');
+  if(local.epis.find(e=>e.nome===nome))return toast('Já cadastrado','err');
+  local.epis.push({cat,nome,ca,qi});
+  if(isConfigured){setSyncing(true);await sb.from('epis').insert({cat,nome,ca,qi,user_id:USER.id});setSyncing(false)}
+  saveLocal();renderCad();renderDash();
+  document.getElementById('c-epi-cat').value='';document.getElementById('c-epi-nome').value='';document.getElementById('c-epi-ca').value='';document.getElementById('c-epi-qtd').value='0';
+  toast(`✓ ${nome} cadastrado`,'ok');
+}
+async function cadFn(){
+  const n=document.getElementById('c-func').value.trim();
+  if(!n)return toast('Informe o nome','err');
+  if(local.funcionarios.includes(n))return toast('Já cadastrado','err');
+  local.funcionarios.push(n);
+  if(isConfigured){setSyncing(true);await sb.from('funcionarios').insert({nome:n,user_id:USER.id});setSyncing(false)}
+  saveLocal();renderCad();document.getElementById('c-func').value='';toast(`✓ ${n}`,'ok');
+}
+async function cadR(){
+  const n=document.getElementById('c-resp').value.trim();
+  if(!n)return toast('Informe o nome','err');
+  if(local.responsaveis.includes(n))return toast('Já cadastrado','err');
+  local.responsaveis.push(n);
+  if(isConfigured){setSyncing(true);await sb.from('responsaveis').insert({nome:n,user_id:USER.id});setSyncing(false)}
+  saveLocal();renderCad();document.getElementById('c-resp').value='';toast(`✓ ${n}`,'ok');
+}
+async function cadO(){
+  const n=document.getElementById('c-obra').value.trim();
+  if(!n)return toast('Informe a obra','err');
+  if(local.obras.includes(n))return toast('Já cadastrada','err');
+  local.obras.push(n);
+  if(isConfigured){setSyncing(true);await sb.from('obras').insert({nome:n,user_id:USER.id});setSyncing(false)}
+  saveLocal();renderCad();document.getElementById('c-obra').value='';toast(`✓ Obra ${n}`,'ok');
+}
+
+function renderCad(){
+  const ef=estF(),ee=estE();
+  const rf=id=>document.getElementById(id);
+  rf('pc-ferr').textContent=local.ferramentas.length;
+  rf('l-ferr').innerHTML=ef.length===0?`<div class="empty"><span class="ei">🔧</span><div class="et">Nenhuma</div></div>`:ef.map(f=>`<div class="li"><div class="li-inf"><div class="li-n">${f.nome}</div><div class="li-s">${f.tipo} · estoque: ${f.q}</div></div><button class="db" onclick="remF('${f.nome.replace(/'/g,"\\'")}')">✕</button></div>`).join('');
+  rf('pc-epi').textContent=local.epis.length;
+  rf('l-epi').innerHTML=ee.length===0?`<div class="empty"><span class="ei">🦺</span><div class="et">Nenhum</div></div>`:ee.map(e=>`<div class="li"><div class="li-inf"><div class="li-n">${e.nome}</div><div class="li-s">${e.cat} · ${e.ca||'—'} · est: ${e.q}</div></div><button class="db" onclick="remE('${e.nome.replace(/'/g,"\\'")}')">✕</button></div>`).join('');
+  rf('pc-func').textContent=local.funcionarios.length;
+  rf('l-func').innerHTML=local.funcionarios.length===0?`<div class="empty"><span class="ei">👤</span><div class="et">Nenhum</div></div>`:local.funcionarios.map(f=>`<div class="li"><div class="li-inf"><div class="li-n">${f}</div></div><button class="db" onclick="remFn('${f.replace(/'/g,"\\'")}')">✕</button></div>`).join('');
+  rf('pc-resp').textContent=local.responsaveis.length;
+  rf('l-resp').innerHTML=local.responsaveis.length===0?`<div class="empty"><span class="ei">👔</span><div class="et">Nenhum</div></div>`:local.responsaveis.map(r=>`<div class="li"><div class="li-inf"><div class="li-n">${r}</div></div><button class="db" onclick="remR('${r.replace(/'/g,"\\'")}')">✕</button></div>`).join('');
+  rf('pc-obra').textContent=local.obras.length;
+  rf('l-obra').innerHTML=local.obras.length===0?`<div class="empty"><span class="ei">🏗️</span><div class="et">Nenhuma</div></div>`:local.obras.map(o=>`<div class="li"><div class="li-inf"><div class="li-n">${o}</div></div><button class="db" onclick="remO('${o.replace(/'/g,"\\'")}')">✕</button></div>`).join('');
+}
+async function remF(n){local.ferramentas=local.ferramentas.filter(x=>x.nome!==n);if(isConfigured)await sb.from('ferramentas').delete().eq('nome',n).eq('user_id',USER.id);saveLocal();renderCad();renderDash();toast('Removido','info')}
+async function remE(n){local.epis=local.epis.filter(x=>x.nome!==n);if(isConfigured)await sb.from('epis').delete().eq('nome',n).eq('user_id',USER.id);saveLocal();renderCad();renderDash();toast('Removido','info')}
+async function remFn(n){local.funcionarios=local.funcionarios.filter(x=>x!==n);if(isConfigured)await sb.from('funcionarios').delete().eq('nome',n).eq('user_id',USER.id);saveLocal();renderCad();toast('Removido','info')}
+async function remR(n){local.responsaveis=local.responsaveis.filter(x=>x!==n);if(isConfigured)await sb.from('responsaveis').delete().eq('nome',n).eq('user_id',USER.id);saveLocal();renderCad();toast('Removido','info')}
+async function remO(n){local.obras=local.obras.filter(x=>x!==n);if(isConfigured)await sb.from('obras').delete().eq('nome',n).eq('user_id',USER.id);saveLocal();renderCad();toast('Removido','info')}
+
+/* ══ IMPORTAR NR-6 ══ */
+async function importarEpisNR6(){
+  const padrao=[
+    {cat:'PROTEÇÃO DA CABEÇA',nome:'CAPACETE ABA FRONTAL',ca:'CA-31260',qi:20},
+    {cat:'PROTEÇÃO DOS OLHOS E ROSTO',nome:'ÓCULOS DE PROTEÇÃO INCOLOR',ca:'CA-11285',qi:20},
+    {cat:'PROTEÇÃO AUDITIVA',nome:'PROTETOR AURICULAR ESPUMA',ca:'CA-9540',qi:50},
+    {cat:'PROTEÇÃO RESPIRATÓRIA',nome:'MÁSCARA PFF2 SEM VÁLVULA',ca:'CA-38503',qi:50},
+    {cat:'PROTEÇÃO DOS MEMBROS SUPERIORES',nome:'LUVA RASPA DE COURO',ca:'CA-38590',qi:30},
+    {cat:'PROTEÇÃO DOS MEMBROS SUPERIORES',nome:'LUVA NITRÍLICA',ca:'CA-40006',qi:50},
+    {cat:'PROTEÇÃO DOS MEMBROS INFERIORES',nome:'BOTINA BIQUEIRA AÇO',ca:'CA-28140',qi:20},
+    {cat:'PROTEÇÃO DO TRONCO',nome:'COLETE REFLETIVO',ca:'CA-11285',qi:30},
+    {cat:'PROTEÇÃO CONTRA QUEDAS',nome:'CINTO SEGURANÇA PARAQUEDISTA',ca:'CA-25170',qi:10},
+    {cat:'PROTEÇÃO CONTRA QUEDAS',nome:'TALABARTE DUPLO',ca:'CA-25170',qi:10},
+  ];
+  let add=0;
+  for(const e of padrao){
+    if(!local.epis.find(x=>x.nome===e.nome)){
+      local.epis.push(e);
+      if(isConfigured)await sb.from('epis').insert({...e,user_id:USER.id});
+      add++;
+    }
+  }
+  saveLocal();renderCad();renderDash();renderEpiEst();
+  toast(`✓ ${add} EPIs importados`,'ok');
+}
+
+/* ══ CSV ══ */
+function csv(tipo){
+  let c='',n='';
+  const fs=local.fsaidas.map(s=>({...s,ferramenta:s.ferramenta||s.ferramenta_nome,qtd:s.qtd||s.quantidade}));
+  const fe=local.fentradas.map(e=>({...e,ferramenta:e.ferramenta||e.ferramenta_nome,qtd:e.qtd||e.quantidade}));
+  const es=local.esaidas.map(s=>({...s,epi:s.epi||s.epi_nome,qtd:s.qtd||s.quantidade}));
+  const ee=local.eentradas.map(e=>({...e,epi:e.epi||e.epi_nome,qtd:e.qtd||e.quantidade}));
+  if(tipo==='fsaidas'){c='DATA,HORA,TIPO,FERRAMENTA,QTD,FUNCIONÁRIO,OBRA,OBS\n'+fs.map(s=>`${s.data},${s.hora||''},${s.tipo_ferramenta||''},${s.ferramenta},${s.qtd},${s.funcionario},${s.obra},"${s.obs||''}"`).join('\n');n='saidas-ferramentas.csv';}
+  else if(tipo==='fentradas'){c='DATA,HORA,TIPO,FERRAMENTA,QTD,FUNCIONÁRIO,OBRA,OBS\n'+fe.map(e=>`${e.data},${e.hora||''},${e.tipo_ferramenta||''},${e.ferramenta},${e.qtd},${e.funcionario},${e.obra},"${e.obs||''}"`).join('\n');n='entradas-ferramentas.csv';}
+  else if(tipo==='esaidas'){c='DATA,HORA,CATEGORIA,EPI,CA,QTD,FUNCIONÁRIO,OBRA,OBS\n'+es.map(s=>`${s.data},${s.hora||''},${s.cat||''},${s.epi},${s.ca||''},${s.qtd},${s.funcionario},${s.obra},"${s.obs||''}"`).join('\n');n='saidas-epi.csv';}
+  else if(tipo==='eentradas'){c='DATA,HORA,CATEGORIA,EPI,CA,QTD,FUNCIONÁRIO,OBRA,OBS\n'+ee.map(e=>`${e.data},${e.hora||''},${e.cat||''},${e.epi},${e.ca||''},${e.qtd},${e.funcionario},${e.obra},"${e.obs||''}"`).join('\n');n='entradas-epi.csv';}
+  else{c='TIPO,ITEM,ESTOQUE\n'+estF().map(f=>`FERRAMENTA,${f.nome},${f.q}`).join('\n')+'\n'+estE().map(e=>`EPI,${e.nome},${e.q}`).join('\n');n='estoque.csv';}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+c],{type:'text/csv;charset=utf-8;'}));a.download=n;a.click();toast('CSV exportado','ok');
+}
+
+/* ══ LOGOUT ══ */
+async function doLogout(){
+  if(sb)await sb.auth.signOut();
+  window.location.href='login.html';
+}
+
+/* ══ BOOT ══ */
+init();
+</script>
+</body>
+</html>

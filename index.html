@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#09090b">
+<title>FerrPro — Controle de Ferramentas e EPIs para Obras</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#09090b;--ink1:#111116;--ink2:#18181f;--ink3:#22222d;
+  --wire:rgba(255,255,255,.07);--wire2:rgba(255,255,255,.12);
+  --gold:#e8a020;--gold2:#ffbe4d;--gold-g:rgba(232,160,32,.13);
+  --rose:#f43f5e;--lime:#84cc16;--violet:#a78bfa;
+  --snow:#fafafa;--mist:#71717a;--fog:#3f3f46;
+  --sans:'Figtree',sans-serif;--disp:'Bebas Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--snow);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* NOISE */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(9,9,11,.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--wire);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-family:var(--disp);font-size:24px;letter-spacing:2px;color:var(--snow)}
+.nav-brand em{color:var(--gold);font-style:normal}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{color:var(--mist);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--snow)}
+.nav-cta{background:var(--gold);color:#000;padding:9px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:var(--gold2);color:#000!important}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:100px 24px 60px}
+.hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(232,160,32,.15) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold-g);border:1px solid rgba(232,160,32,.3);border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
+.hero h1{font-family:var(--disp);font-size:clamp(52px,10vw,100px);letter-spacing:2px;line-height:.95;margin-bottom:24px}
+.hero h1 span{color:var(--gold)}
+.hero p{font-size:clamp(16px,2.5vw,20px);color:var(--mist);max-width:540px;margin:0 auto 40px;line-height:1.6}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-hero-primary{background:var(--gold);color:#000;padding:16px 32px;border-radius:10px;font-family:var(--disp);font-size:18px;letter-spacing:1px;text-decoration:none;transition:all .2s;box-shadow:0 8px 30px rgba(232,160,32,.3)}
+.btn-hero-primary:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 12px 40px rgba(232,160,32,.4)}
+.btn-hero-ghost{background:transparent;color:var(--snow);padding:16px 32px;border-radius:10px;font-family:var(--disp);font-size:18px;letter-spacing:1px;text-decoration:none;border:1px solid var(--wire2);transition:all .2s}
+.btn-hero-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.hero-sub{margin-top:48px;font-size:13px;color:var(--fog)}
+
+/* LOGOS */
+.logos{position:relative;z-index:1;padding:40px 24px;border-top:1px solid var(--wire);border-bottom:1px solid var(--wire);text-align:center}
+.logos p{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--fog);margin-bottom:24px}
+.logos-row{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.logos-row span{font-family:var(--disp);font-size:18px;letter-spacing:2px;color:var(--fog);opacity:.6}
+
+/* FEATURES */
+.features{position:relative;z-index:1;padding:100px 24px;max-width:1100px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.section-title{font-family:var(--disp);font-size:clamp(36px,6vw,64px);letter-spacing:1px;line-height:1;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--mist);max-width:500px;line-height:1.6;margin-bottom:60px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.feat-card{background:var(--ink2);border:1px solid var(--wire);border-radius:16px;padding:28px;position:relative;overflow:hidden;transition:border-color .3s}
+.feat-card:hover{border-color:rgba(232,160,32,.3)}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.feat-icon{font-size:32px;margin-bottom:16px;display:block}
+.feat-title{font-family:var(--disp);font-size:22px;letter-spacing:.5px;margin-bottom:10px}
+.feat-desc{font-size:14px;color:var(--mist);line-height:1.6}
+
+/* HOW */
+.how{position:relative;z-index:1;padding:80px 24px;background:var(--ink1);border-top:1px solid var(--wire);border-bottom:1px solid var(--wire)}
+.how-inner{max-width:900px;margin:0 auto;text-align:center}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;margin-top:60px}
+.step{text-align:center}
+.step-num{font-family:var(--disp);font-size:64px;color:var(--gold);opacity:.3;line-height:1;margin-bottom:12px}
+.step-title{font-family:var(--disp);font-size:20px;letter-spacing:.5px;margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--mist);line-height:1.6}
+
+/* PRICING */
+.pricing{position:relative;z-index:1;padding:100px 24px;max-width:1000px;margin:0 auto;text-align:center}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:60px}
+.plan{background:var(--ink2);border:1px solid var(--wire);border-radius:20px;padding:32px;position:relative;overflow:hidden;transition:all .3s}
+.plan:hover{transform:translateY(-4px);border-color:rgba(232,160,32,.2)}
+.plan.popular{border-color:rgba(232,160,32,.4);background:linear-gradient(135deg,var(--ink2),rgba(232,160,32,.05))}
+.plan-badge{position:absolute;top:16px;right:16px;background:var(--gold);color:#000;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px}
+.plan-name{font-family:var(--disp);font-size:28px;letter-spacing:1px;margin-bottom:8px}
+.plan-price{font-family:var(--disp);font-size:52px;letter-spacing:-1px;color:var(--gold);line-height:1}
+.plan-period{font-size:14px;color:var(--mist);margin-bottom:24px}
+.plan-features{list-style:none;text-align:left;margin-bottom:28px}
+.plan-features li{font-size:14px;color:var(--mist);padding:7px 0;border-bottom:1px solid var(--wire);display:flex;align-items:center;gap:8px}
+.plan-features li::before{content:'✓';color:var(--lime);font-weight:800;flex-shrink:0}
+.plan-features li.no::before{content:'✕';color:var(--fog)}
+.plan-features li.no{color:var(--fog)}
+.btn-plan{display:block;width:100%;padding:14px;border-radius:10px;font-family:var(--disp);font-size:18px;letter-spacing:1px;text-decoration:none;text-align:center;transition:all .2s;border:none;cursor:pointer}
+.btn-plan-primary{background:var(--gold);color:#000;box-shadow:0 8px 24px rgba(232,160,32,.25)}
+.btn-plan-primary:hover{background:var(--gold2)}
+.btn-plan-ghost{background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)}
+.btn-plan-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* TESTIMONIALS */
+.testimonials{position:relative;z-index:1;padding:80px 24px;background:var(--ink1);border-top:1px solid var(--wire)}
+.test-inner{max-width:900px;margin:0 auto;text-align:center}
+.test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:48px}
+.test-card{background:var(--ink2);border:1px solid var(--wire);border-radius:16px;padding:24px;text-align:left}
+.test-stars{color:var(--gold);font-size:14px;margin-bottom:12px}
+.test-text{font-size:14px;color:var(--mist);line-height:1.7;margin-bottom:16px;font-style:italic}
+.test-author{font-weight:700;font-size:14px}
+.test-role{font-size:12px;color:var(--fog)}
+
+/* CTA */
+.cta{position:relative;z-index:1;padding:100px 24px;text-align:center}
+.cta-box{max-width:600px;margin:0 auto;background:linear-gradient(135deg,var(--ink2),rgba(232,160,32,.08));border:1px solid rgba(232,160,32,.2);border-radius:24px;padding:60px 40px}
+.cta h2{font-family:var(--disp);font-size:clamp(36px,6vw,56px);letter-spacing:1px;margin-bottom:16px}
+.cta p{font-size:16px;color:var(--mist);margin-bottom:36px;line-height:1.6}
+
+/* FOOTER */
+footer{position:relative;z-index:1;padding:40px 24px;border-top:1px solid var(--wire);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.foot-brand{font-family:var(--disp);font-size:20px;letter-spacing:2px}
+.foot-brand em{color:var(--gold);font-style:normal}
+.foot-links{display:flex;gap:20px}
+.foot-links a{color:var(--fog);font-size:13px;text-decoration:none;transition:color .2s}
+.foot-links a:hover{color:var(--snow)}
+.foot-copy{color:var(--fog);font-size:12px;width:100%}
+
+/* MOBILE */
+@media(max-width:640px){
+  .nav-links a:not(.nav-cta){display:none}
+  .hero{padding:80px 20px 50px}
+  .features,.pricing{padding:60px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">Ferr<em>Pro</em></div>
+  <div class="nav-links">
+    <a href="#features">Funcionalidades</a>
+    <a href="#pricing">Preços</a>
+    <a href="login.html" class="nav-cta">Entrar</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1">
+    <div class="hero-badge">🔨 Novo · Gestão para Obras</div>
+    <h1>Controle<br><span>Total</span><br>da sua Obra</h1>
+    <p>Gerencie ferramentas, EPIs, funcionários e obras em tempo real. Do canteiro ao escritório, tudo na palma da mão.</p>
+    <div class="hero-btns">
+      <a href="register.html" class="btn-hero-primary">🚀 Começar Grátis</a>
+      <a href="#features" class="btn-hero-ghost">Ver Funcionalidades</a>
+    </div>
+    <div class="hero-sub">✓ 14 dias grátis &nbsp;·&nbsp; ✓ Sem cartão de crédito &nbsp;·&nbsp; ✓ Cancele quando quiser</div>
+  </div>
+</section>
+
+<!-- LOGOS -->
+<div class="logos">
+  <p>Usado por empresas de construção em todo o Brasil</p>
+  <div class="logos-row">
+    <span>CONSTRUTORA SILVA</span>
+    <span>OBRAS & CIA</span>
+    <span>BUILDTECH</span>
+    <span>CONSTRO PRO</span>
+    <span>ENGENHARIA TOTAL</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-label">Funcionalidades</div>
+  <div class="section-title">Tudo que sua<br>obra precisa</div>
+  <div class="section-sub">Um sistema completo para controlar ferramentas e EPIs com rastreabilidade total.</div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <span class="feat-icon">🔧</span>
+      <div class="feat-title">Controle de Ferramentas</div>
+      <div class="feat-desc">Registre entradas e saídas de ferramentas por funcionário e obra. Saiba exatamente quem está com cada ferramenta.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🦺</span>
+      <div class="feat-title">Gestão de EPIs (NR-6)</div>
+      <div class="feat-desc">Controle completo de EPIs com número CA/CC. Histórico de entrega por funcionário. Conformidade total com a NR-6.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📊</span>
+      <div class="feat-title">Dashboard em Tempo Real</div>
+      <div class="feat-desc">Visão completa do estoque atual, alertas de estoque baixo e histórico de todas as movimentações.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">👷</span>
+      <div class="feat-title">Gestão de Equipe</div>
+      <div class="feat-desc">Cadastre funcionários, responsáveis e obras. Rastreie quem pegou o quê e quando devolveu.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📱</span>
+      <div class="feat-title">100% Mobile</div>
+      <div class="feat-desc">Funciona como app no celular. Sem precisar instalar nada. Perfeito para usar diretamente no canteiro de obras.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📥</span>
+      <div class="feat-title">Exportação CSV</div>
+      <div class="feat-desc">Exporte todos os dados em CSV para Excel. Relatórios completos de entradas, saídas e estoque.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🏗️</span>
+      <div class="feat-title">Multi-Obras</div>
+      <div class="feat-desc">Gerencie várias obras ao mesmo tempo. Filtre histórico por obra, funcionário ou ferramenta.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">☁️</span>
+      <div class="feat-title">Dados na Nuvem</div>
+      <div class="feat-desc">Todos os dados salvos na nuvem com segurança. Acesse de qualquer dispositivo, a qualquer hora.</div>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔒</span>
+      <div class="feat-title">Multi-Usuário</div>
+      <div class="feat-desc">Cada empresa tem seu próprio espaço seguro. Adicione múltiplos usuários com diferentes permissões.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="how">
+  <div class="how-inner">
+    <div class="section-label">Como funciona</div>
+    <div class="section-title">Simples assim</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Cadastre</div>
+        <div class="step-desc">Crie sua conta em 1 minuto. Cadastre suas ferramentas, EPIs, funcionários e obras.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Registre</div>
+        <div class="step-desc">Registre saídas e entradas diretamente do celular. Simples e rápido no canteiro.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Controle</div>
+        <div class="step-desc">Visualize o estoque em tempo real. Saiba exatamente onde está cada ferramenta.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Exporte</div>
+        <div class="step-desc">Gere relatórios completos em CSV para enviar para a gestão ou auditorias.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-label">Planos</div>
+  <div class="section-title">Preço justo<br>para cada tamanho</div>
+  <div class="section-sub" style="margin:0 auto 60px">Comece grátis por 14 dias. Sem cartão de crédito.</div>
+  <div class="plans">
+
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">R$49</div>
+      <div class="plan-period">/mês · cobrado mensalmente</div>
+      <ul class="plan-features">
+        <li>Até 1 obra</li>
+        <li>Até 5 usuários</li>
+        <li>Ferramentas ilimitadas</li>
+        <li>EPIs ilimitados</li>
+        <li>Exportação CSV</li>
+        <li class="no">Relatórios avançados</li>
+        <li class="no">Suporte prioritário</li>
+      </ul>
+      <a href="register.html" class="btn-plan btn-plan-ghost">Começar Grátis</a>
+    </div>
+
+    <div class="plan popular">
+      <div class="plan-badge">MAIS POPULAR</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">R$99</div>
+      <div class="plan-period">/mês · cobrado mensalmente</div>
+      <ul class="plan-features">
+        <li>Obras ilimitadas</li>
+        <li>Até 20 usuários</li>
+        <li>Ferramentas ilimitadas</li>
+        <li>EPIs ilimitados</li>
+        <li>Exportação CSV</li>
+        <li>Relatórios avançados</li>
+        <li class="no">Suporte prioritário</li>
+      </ul>
+      <a href="register.html" class="btn-plan btn-plan-primary">Começar Grátis</a>
+    </div>
+
+    <div class="plan">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">R$199</div>
+      <div class="plan-period">/mês · cobrado mensalmente</div>
+      <ul class="plan-features">
+        <li>Obras ilimitadas</li>
+        <li>Usuários ilimitados</li>
+        <li>Ferramentas ilimitadas</li>
+        <li>EPIs ilimitados</li>
+        <li>Exportação CSV</li>
+        <li>Relatórios avançados</li>
+        <li>Suporte prioritário</li>
+      </ul>
+      <a href="register.html" class="btn-plan btn-plan-ghost">Começar Grátis</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="test-inner">
+    <div class="section-label">Depoimentos</div>
+    <div class="section-title">Quem usa, aprova</div>
+    <div class="test-grid">
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">"Antes perdíamos ferramentas todo mês. Com o FerrPro, sabemos exatamente quem está com cada equipamento."</div>
+        <div class="test-author">Carlos Mendes</div>
+        <div class="test-role">Encarregado de Obras — Construtora Silva</div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">"A parte dos EPIs é incrível. Agora temos conformidade total com a NR-6 e relatório prontinho pra auditoria."</div>
+        <div class="test-author">Ana Paula Costa</div>
+        <div class="test-role">Técnica de Segurança — BuildTech</div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">"Simples demais. Minha equipe aprendeu a usar em 10 minutos. Funciona perfeitamente no celular."</div>
+        <div class="test-author">Roberto Lima</div>
+        <div class="test-role">Diretor — Constro Pro</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-box">
+    <h2>Comece hoje,<br>grátis</h2>
+    <p>14 dias de teste grátis. Sem cartão de crédito. Configure em menos de 5 minutos.</p>
+    <a href="register.html" class="btn-hero-primary" style="display:inline-block">🚀 Criar Conta Grátis</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-brand">Ferr<em>Pro</em></div>
+  <div class="foot-links">
+    <a href="#">Termos</a>
+    <a href="#">Privacidade</a>
+    <a href="#">Contato</a>
+  </div>
+  <div class="foot-copy">© 2025 FerrPro · Todos os direitos reservados</div>
+</footer>
+
+</body>
+</html>
