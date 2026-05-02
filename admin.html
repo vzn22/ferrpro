@@ -240,7 +240,7 @@ const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
 // ══════════════════════════════════════════
 
 // ⚠️ DEFINA SUA SENHA ADMIN AQUI
-const ADMIN_PASSWORD = 'proalmoxarife2025';
+const ADMIN_PASSWORD = 'admin123';
 // ══════════════════════════════════════════
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -334,7 +334,7 @@ function renderLista(){
     const dias=getDiasRestantes(a);
     const vencStr=new Date(a.vencimento).toLocaleDateString('pt-BR');
     const badgeClass=status==='ativo'?'b-g':status==='aviso'?'b-y':'b-r';
-    const badgeText=status==='ativo'?`✅ Ativo (${dias}d)`:`status==='aviso'?`⚠️ Vence em ${dias}d`:'❌ Vencido'`;
+    
     return`<div class="assinante ${status}">
       <div class="ass-top">
         <span class="ass-email">${a.email}</span>
