@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#09090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ProAlmoxarife — Relatórios</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#09090b;--ink1:#111116;--ink2:#18181f;--ink3:#22222d;--ink4:#2e2e3d;
+  --wire:rgba(255,255,255,.07);--wire2:rgba(255,255,255,.12);
+  --gold:#e8a020;--gold2:#ffbe4d;--gold-g:rgba(232,160,32,.13);
+  --rose:#f43f5e;--rose-g:rgba(244,63,94,.13);
+  --lime:#84cc16;--lime-g:rgba(132,204,22,.13);
+  --sky:#38bdf8;--sky-g:rgba(56,189,248,.13);
+  --violet:#a78bfa;--violet-g:rgba(167,139,250,.13);
+  --snow:#fafafa;--mist:#71717a;--fog:#3f3f46;
+  --r:16px;--rs:10px;
+  --sans:'Figtree',sans-serif;--disp:'Bebas Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--ink);color:var(--snow);font-family:var(--sans);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(9,9,11,.92);backdrop-filter:blur(28px);border-bottom:1px solid var(--wire);padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:30px;height:30px;background:var(--gold);border-radius:8px;display:grid;place-items:center;font-size:15px;box-shadow:0 0 18px rgba(232,160,32,.4)}
+.brand-text{font-family:var(--disp);font-size:19px;letter-spacing:1.5px}
+.brand-text em{color:var(--gold);font-style:normal}
+.back-btn{background:none;border:1px solid var(--wire2);color:var(--mist);font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--sans);text-decoration:none;display:flex;align-items:center;gap:6px}
+.back-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* MAIN */
+.main{padding:16px 14px 40px;max-width:700px;margin:0 auto;position:relative;z-index:1}
+
+/* HEADER */
+.page-header{margin-bottom:20px}
+.page-title{font-family:var(--disp);font-size:28px;letter-spacing:1px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--mist)}
+
+/* FILTERS */
+.filters{background:var(--ink2);border:1px solid var(--wire);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.filters-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--fog);margin-bottom:12px}
+.filters-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fi,.fs{width:100%;background:var(--ink3);border:1px solid var(--wire2);border-radius:var(--rs);padding:11px 14px;color:var(--snow);font-family:var(--sans);font-size:14px;font-weight:500;outline:none;transition:all .2s;-webkit-appearance:none;appearance:none}
+.fi:focus,.fs:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,160,32,.09)}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--fog);pointer-events:none;font-size:11px}
+.sw .fs{padding-right:32px}
+.btn-filter{width:100%;padding:12px;border:none;border-radius:var(--rs);font-family:var(--disp);font-size:15px;letter-spacing:1px;cursor:pointer;transition:all .15s;background:var(--gold);color:#000;margin-top:10px;box-shadow:0 6px 20px rgba(232,160,32,.2)}
+.btn-filter:active{transform:scale(.975)}
+
+/* REPORT TABS */
+.rep-tabs{display:flex;overflow-x:auto;gap:8px;margin-bottom:16px;scrollbar-width:none;padding-bottom:4px}
+.rep-tabs::-webkit-scrollbar{display:none}
+.rep-tab{flex-shrink:0;padding:8px 14px;border:1px solid var(--wire2);border-radius:20px;background:none;color:var(--mist);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.rep-tab.on{background:var(--gold-g);color:var(--gold2);border-color:rgba(232,160,32,.3)}
+
+/* CARD */
+.card{background:var(--ink2);border:1px solid var(--wire);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-family:var(--disp);font-size:16px;letter-spacing:.8px;display:flex;align-items:center;gap:8px}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);flex-shrink:0}
+.pip.r{background:var(--rose);box-shadow:0 0 8px var(--rose)}
+.pip.l{background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.pip.v{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+.pip.s{background:var(--sky);box-shadow:0 0 8px var(--sky)}
+
+/* EXPORT BTN */
+.btn-export{background:var(--ink3);border:1px solid var(--wire2);color:var(--mist);font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-export:hover{border-color:var(--gold);color:var(--gold)}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--fog);padding:8px 0;border-bottom:1px solid var(--wire);text-align:left}
+.tbl td{font-size:13px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.04);color:var(--snow)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+
+/* BAR CHART */
+.bar-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.bar-row:last-child{border-bottom:none}
+.bar-label{font-size:12px;font-weight:600;min-width:100px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-wrap{flex:1;height:8px;background:var(--ink3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.bar-val{font-family:var(--disp);font-size:14px;min-width:32px;text-align:right;color:var(--gold2)}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-mini{background:var(--ink3);border-radius:12px;padding:14px;text-align:center}
+.stat-mini-val{font-family:var(--disp);font-size:28px;letter-spacing:-1px;line-height:1}
+.stat-mini-lbl{font-size:11px;color:var(--mist);margin-top:4px}
+
+/* BADGE */
+.bx{font-family:var(--disp);font-size:12px;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.bx-r{background:var(--rose-g);color:var(--rose)}
+.bx-l{background:var(--lime-g);color:var(--lime)}
+.bx-y{background:var(--gold-g);color:var(--gold2)}
+.bx-v{background:var(--violet-g);color:var(--violet)}
+.bx-s{background:var(--sky-g);color:var(--sky)}
+
+/* ALERTA */
+.alert{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:12px;padding:13px 15px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.alert-ico{font-size:20px;flex-shrink:0}
+.alert-body{}
+.alert-title{font-size:13px;font-weight:700;color:var(--rose)}
+.alert-sub{font-size:12px;color:var(--mist);margin-top:2px}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--fog)}
+.empty-ico{font-size:36px;margin-bottom:8px;display:block;opacity:.35}
+
+/* LOADING */
+.loading{text-align:center;padding:32px;color:var(--mist);font-size:13px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--wire2);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PERIOD SUMMARY */
+.period-card{background:linear-gradient(135deg,var(--ink2),rgba(232,160,32,.06));border:1px solid rgba(232,160,32,.15);border-radius:var(--r);padding:16px;margin-bottom:12px}
+
+@media(min-width:600px){.main{max-width:700px}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🔨</div>
+    <div class="brand-text">Pro<em>Almoxarife</em></div>
+  </div>
+  <a href="app.html" class="back-btn">← Voltar ao App</a>
+</div>
+
+<div class="main">
+
+  <div class="page-header">
+    <div class="page-title">📊 Relatórios</div>
+    <div class="page-sub">Análise completa de ferramentas, EPIs e movimentações</div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div class="filters-title">Filtros</div>
+    <div class="filters-row">
+      <div class="sw">
+        <select id="f-periodo" class="fs" onchange="aplicarFiltros()">
+          <option value="todos">Todo período</option>
+          <option value="hoje">Hoje</option>
+          <option value="semana">Esta semana</option>
+          <option value="mes" selected>Este mês</option>
+          <option value="mes-passado">Mês passado</option>
+          <option value="3meses">Últimos 3 meses</option>
+        </select>
+      </div>
+      <div class="sw">
+        <select id="f-obra" class="fs" onchange="aplicarFiltros()">
+          <option value="todas">Todas as obras</option>
+        </select>
+      </div>
+    </div>
+    <div class="filters-row" style="margin-top:8px">
+      <div class="sw">
+        <select id="f-tipo" class="fs" onchange="aplicarFiltros()">
+          <option value="todos">Ferr. + EPIs</option>
+          <option value="ferramentas">Só Ferramentas</option>
+          <option value="epis">Só EPIs</option>
+        </select>
+      </div>
+      <div class="sw">
+        <select id="f-func" class="fs" onchange="aplicarFiltros()">
+          <option value="todos">Todos funcionários</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS DOS RELATÓRIOS -->
+  <div class="rep-tabs">
+    <button class="rep-tab on" onclick="showRel('funcionario',this)">👷 Por Funcionário</button>
+    <button class="rep-tab" onclick="showRel('obra',this)">🏗️ Por Obra</button>
+    <button class="rep-tab" onclick="showRel('epis',this)">🦺 EPIs Entregues</button>
+    <button class="rep-tab" onclick="showRel('estoque',this)">📦 Estoque Atual</button>
+    <button class="rep-tab" onclick="showRel('periodo',this)">📅 Por Período</button>
+    <button class="rep-tab" onclick="showRel('baixo',this)">⚠️ Estoque Baixo</button>
+  </div>
+
+  <!-- CONTEÚDO DOS RELATÓRIOS -->
+  <div id="rel-content">
+    <div class="loading"><span class="spinner"></span>Carregando dados...</div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════
+const SUPABASE_URL = 'https://cahyauugshenwqbxvigg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
+// ══════════════════════════════════
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let USER = null;
+let relAtual = 'funcionario';
+
+let dados = {
+  ferramentas: [], epis: [],
+  funcionarios: [], obras: [],
+  fsaidas: [], fentradas: [],
+  esaidas: [], eentradas: []
+};
+
+/* ══ INIT ══ */
+async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ window.location.href='login.html'; return; }
+  USER = session.user;
+  await loadDados();
+  preencherFiltros();
+  aplicarFiltros();
+}
+
+/* ══ LOAD ══ */
+async function loadDados(){
+  const uid = USER.id;
+  const [f,e,fn,o,fs,fe,es,ee] = await Promise.all([
+    sb.from('ferramentas').select('*').eq('user_id',uid),
+    sb.from('epis').select('*').eq('user_id',uid),
+    sb.from('funcionarios').select('*').eq('user_id',uid),
+    sb.from('obras').select('*').eq('user_id',uid),
+    sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','saida'),
+    sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','entrada'),
+    sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','saida'),
+    sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','entrada'),
+  ]);
+  dados.ferramentas = f.data||[];
+  dados.epis = e.data||[];
+  dados.funcionarios = (fn.data||[]).map(x=>x.nome);
+  dados.obras = (o.data||[]).map(x=>x.nome);
+  dados.fsaidas = (fs.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade,_m:'ferr'}));
+  dados.fentradas = (fe.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade,_m:'ferr'}));
+  dados.esaidas = (es.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade,_m:'epi'}));
+  dados.eentradas = (ee.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade,_m:'epi'}));
+}
+
+/* ══ PREENCHER FILTROS ══ */
+function preencherFiltros(){
+  const fo = document.getElementById('f-obra');
+  dados.obras.forEach(o=>{
+    const opt=document.createElement('option');
+    opt.value=o;opt.textContent=o;fo.appendChild(opt);
+  });
+  const ff = document.getElementById('f-func');
+  dados.funcionarios.forEach(f=>{
+    const opt=document.createElement('option');
+    opt.value=f;opt.textContent=f;ff.appendChild(opt);
+  });
+}
+
+/* ══ FILTRAR DADOS ══ */
+function filtrarPorPeriodo(lista){
+  const periodo = document.getElementById('f-periodo').value;
+  if(periodo==='todos') return lista;
+  const hoje = new Date();
+  hoje.setHours(23,59,59,999);
+  const inicio = new Date();
+  if(periodo==='hoje'){inicio.setHours(0,0,0,0)}
+  else if(periodo==='semana'){inicio.setDate(hoje.getDate()-7)}
+  else if(periodo==='mes'){inicio.setDate(1);inicio.setHours(0,0,0,0)}
+  else if(periodo==='mes-passado'){
+    inicio.setDate(1);inicio.setMonth(inicio.getMonth()-1);inicio.setHours(0,0,0,0);
+    hoje.setDate(0);
+  }
+  else if(periodo==='3meses'){inicio.setMonth(hoje.getMonth()-3)}
+  return lista.filter(m=>{
+    if(!m.created_at&&!m.data) return true;
+    const d = m.created_at?new Date(m.created_at):parseDataBR(m.data);
+    return d>=inicio&&d<=hoje;
+  });
+}
+
+function parseDataBR(str){
+  if(!str) return new Date(0);
+  const parts=str.split('/');
+  if(parts.length===3) return new Date(parts[2],parts[1]-1,parts[0]);
+  return new Date(str);
+}
+
+function filtrarLista(lista){
+  const obra=document.getElementById('f-obra').value;
+  const func=document.getElementById('f-func').value;
+  let res=filtrarPorPeriodo(lista);
+  if(obra!=='todas') res=res.filter(m=>m.obra===obra);
+  if(func!=='todos') res=res.filter(m=>m.funcionario===func);
+  return res;
+}
+
+function getSaidas(){
+  const tipo=document.getElementById('f-tipo').value;
+  let lista=[];
+  if(tipo==='todos'||tipo==='ferramentas') lista=[...lista,...dados.fsaidas];
+  if(tipo==='todos'||tipo==='epis') lista=[...lista,...dados.esaidas];
+  return filtrarLista(lista);
+}
+
+/* ══ ESTOQUE ══ */
+function getEstoqueF(){
+  return dados.ferramentas.map(f=>{
+    let q=f.qi||0;
+    dados.fentradas.forEach(e=>{if(e.ferramenta===f.nome)q+=e.qtd});
+    dados.fsaidas.forEach(s=>{if(s.ferramenta===f.nome)q-=s.qtd});
+    return{...f,q};
+  });
+}
+function getEstoqueE(){
+  return dados.epis.map(e=>{
+    let q=e.qi||0;
+    dados.eentradas.forEach(en=>{if(en.epi===e.nome)q+=en.qtd});
+    dados.esaidas.forEach(s=>{if(s.epi===e.nome)q-=s.qtd});
+    return{...e,q};
+  });
+}
+
+/* ══ SHOW REL ══ */
+function showRel(rel,btn){
+  relAtual=rel;
+  document.querySelectorAll('.rep-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderRel();
+}
+
+function aplicarFiltros(){renderRel()}
+
+function renderRel(){
+  const el=document.getElementById('rel-content');
+  if(relAtual==='funcionario') el.innerHTML=renderFuncionario();
+  else if(relAtual==='obra') el.innerHTML=renderObra();
+  else if(relAtual==='epis') el.innerHTML=renderEpis();
+  else if(relAtual==='estoque') el.innerHTML=renderEstoque();
+  else if(relAtual==='periodo') el.innerHTML=renderPeriodo();
+  else if(relAtual==='baixo') el.innerHTML=renderBaixo();
+}
+
+/* ══ 1. POR FUNCIONÁRIO ══ */
+function renderFuncionario(){
+  const saidas=getSaidas();
+  const map={};
+  saidas.forEach(s=>{
+    const f=s.funcionario||'—';
+    if(!map[f]) map[f]={nome:f,total:0,ferramentas:0,epis:0,items:{}};
+    map[f].total+=s.qtd||0;
+    if(s._m==='ferr') map[f].ferramentas+=s.qtd||0;
+    if(s._m==='epi') map[f].epis+=s.qtd||0;
+    const item=s.ferramenta||s.epi||'—';
+    map[f].items[item]=(map[f].items[item]||0)+(s.qtd||0);
+  });
+  const lista=Object.values(map).sort((a,b)=>b.total-a.total);
+  const max=lista[0]?.total||1;
+
+  if(lista.length===0) return `<div class="empty"><span class="empty-ico">👷</span>Nenhuma saída no período selecionado</div>`;
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip"></span>Saídas por Funcionário</div>
+        <button class="btn-export" onclick="exportarCSV('funcionario')">📥 CSV</button>
+      </div>
+      ${lista.map(f=>`
+        <div class="bar-row">
+          <div class="bar-label" title="${f.nome}">${f.nome}</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${(f.total/max*100)}%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>
+          <div class="bar-val">${f.total}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="pip"></span>Detalhado</div></div>
+      <table class="tbl">
+        <thead><tr><th>Funcionário</th><th>Ferramentas</th><th>EPIs</th><th>Total</th></tr></thead>
+        <tbody>
+          ${lista.map(f=>`<tr>
+            <td style="font-weight:600">${f.nome}</td>
+            <td><span class="bx bx-y">${f.ferramentas}</span></td>
+            <td><span class="bx bx-v">${f.epis}</span></td>
+            <td style="font-family:var(--disp);font-size:16px;color:var(--gold2)">${f.total}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ══ 2. POR OBRA ══ */
+function renderObra(){
+  const saidas=getSaidas();
+  const map={};
+  saidas.forEach(s=>{
+    const o=s.obra||'—';
+    if(!map[o]) map[o]={nome:o,total:0,ferramentas:0,epis:0,funcs:new Set()};
+    map[o].total+=s.qtd||0;
+    if(s._m==='ferr') map[o].ferramentas+=s.qtd||0;
+    if(s._m==='epi') map[o].epis+=s.qtd||0;
+    if(s.funcionario) map[o].funcs.add(s.funcionario);
+  });
+  const lista=Object.values(map).sort((a,b)=>b.total-a.total);
+  const max=lista[0]?.total||1;
+
+  if(lista.length===0) return `<div class="empty"><span class="empty-ico">🏗️</span>Nenhuma saída no período selecionado</div>`;
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip l"></span>Saídas por Obra</div>
+        <button class="btn-export" onclick="exportarCSV('obra')">📥 CSV</button>
+      </div>
+      ${lista.map(o=>`
+        <div class="bar-row">
+          <div class="bar-label" title="${o.nome}">${o.nome}</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${(o.total/max*100)}%;background:linear-gradient(90deg,var(--lime),#a3e635)"></div></div>
+          <div class="bar-val" style="color:var(--lime)">${o.total}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="pip l"></span>Detalhado por Obra</div></div>
+      <table class="tbl">
+        <thead><tr><th>Obra</th><th>Funcionários</th><th>Ferr.</th><th>EPIs</th><th>Total</th></tr></thead>
+        <tbody>
+          ${lista.map(o=>`<tr>
+            <td style="font-weight:600">${o.nome}</td>
+            <td style="color:var(--mist)">${o.funcs.size}</td>
+            <td><span class="bx bx-y">${o.ferramentas}</span></td>
+            <td><span class="bx bx-v">${o.epis}</span></td>
+            <td style="font-family:var(--disp);font-size:16px;color:var(--lime)">${o.total}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ══ 3. EPIs ENTREGUES ══ */
+function renderEpis(){
+  const tipo=document.getElementById('f-tipo').value;
+  let saidas=filtrarLista(dados.esaidas);
+  const map={};
+  saidas.forEach(s=>{
+    const e=s.epi||'—';
+    if(!map[e]) map[e]={nome:e,cat:s.cat||'—',ca:s.ca||'—',total:0,funcs:new Set(),obras:new Set()};
+    map[e].total+=s.qtd||0;
+    if(s.funcionario) map[e].funcs.add(s.funcionario);
+    if(s.obra) map[e].obras.add(s.obra);
+  });
+  const lista=Object.values(map).sort((a,b)=>b.total-a.total);
+
+  if(lista.length===0) return `<div class="empty"><span class="empty-ico">🦺</span>Nenhuma entrega de EPI no período</div>`;
+
+  const totalEpis=lista.reduce((a,e)=>a+e.total,0);
+
+  return `
+    <div class="stat-grid">
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--violet)">${lista.length}</div>
+        <div class="stat-mini-lbl">Tipos de EPI</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--gold2)">${totalEpis}</div>
+        <div class="stat-mini-lbl">Total entregue</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip v"></span>EPIs Entregues</div>
+        <button class="btn-export" onclick="exportarCSV('epis')">📥 CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>EPI</th><th>CA</th><th>Funcs</th><th>Qtd</th></tr></thead>
+        <tbody>
+          ${lista.map(e=>`<tr>
+            <td>
+              <div style="font-weight:600;font-size:13px">${e.nome}</div>
+              <div style="font-size:11px;color:var(--mist)">${e.cat}</div>
+            </td>
+            <td style="font-size:11px;color:var(--mist)">${e.ca}</td>
+            <td style="color:var(--mist)">${e.funcs.size}</td>
+            <td style="font-family:var(--disp);font-size:16px;color:var(--violet)">${e.total}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ══ 4. ESTOQUE ATUAL ══ */
+function renderEstoque(){
+  const ef=getEstoqueF();
+  const ee=getEstoqueE();
+  const tipo=document.getElementById('f-tipo').value;
+
+  let html=`
+    <div class="stat-grid">
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--gold2)">${ef.filter(f=>f.q>0).length}</div>
+        <div class="stat-mini-lbl">Ferramentas disponíveis</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--violet)">${ee.filter(e=>e.q>0).length}</div>
+        <div class="stat-mini-lbl">EPIs disponíveis</div>
+      </div>
+    </div>`;
+
+  if(tipo==='todos'||tipo==='ferramentas'){
+    html+=`<div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip"></span>Estoque Ferramentas</div>
+        <button class="btn-export" onclick="exportarCSV('estoque-ferr')">📥 CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Ferramenta</th><th>Tipo</th><th>Estoque</th><th>Status</th></tr></thead>
+        <tbody>
+          ${ef.map(f=>{
+            const cor=f.q<=0?'bx-r':f.q<=5?'bx-y':'bx-l';
+            const txt=f.q<=0?'Zerado':f.q<=5?'Baixo':'OK';
+            return`<tr>
+              <td style="font-weight:600">${f.nome}</td>
+              <td style="color:var(--mist);font-size:12px">${f.tipo||'—'}</td>
+              <td style="font-family:var(--disp);font-size:18px;color:${f.q<=0?'var(--rose)':f.q<=5?'var(--gold2)':'var(--lime)'}">${f.q}</td>
+              <td><span class="bx ${cor}">${txt}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  if(tipo==='todos'||tipo==='epis'){
+    html+=`<div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip v"></span>Estoque EPIs</div>
+        <button class="btn-export" onclick="exportarCSV('estoque-epi')">📥 CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>EPI</th><th>CA</th><th>Estoque</th><th>Status</th></tr></thead>
+        <tbody>
+          ${ee.map(e=>{
+            const cor=e.q<=0?'bx-r':e.q<=5?'bx-y':'bx-l';
+            const txt=e.q<=0?'Zerado':e.q<=5?'Baixo':'OK';
+            return`<tr>
+              <td>
+                <div style="font-weight:600">${e.nome}</div>
+                <div style="font-size:11px;color:var(--mist)">${e.cat||'—'}</div>
+              </td>
+              <td style="font-size:11px;color:var(--mist)">${e.ca||'—'}</td>
+              <td style="font-family:var(--disp);font-size:18px;color:${e.q<=0?'var(--rose)':e.q<=5?'var(--gold2)':'var(--lime)'}">${e.q}</td>
+              <td><span class="bx ${cor}">${txt}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  return html;
+}
+
+/* ══ 5. POR PERÍODO ══ */
+function renderPeriodo(){
+  const saidas=getSaidas();
+  const map={};
+  saidas.forEach(s=>{
+    const d=s.data||'—';
+    if(!map[d]) map[d]={data:d,total:0,ferramentas:0,epis:0};
+    map[d].total+=s.qtd||0;
+    if(s._m==='ferr') map[d].ferramentas+=s.qtd||0;
+    if(s._m==='epi') map[d].epis+=s.qtd||0;
+  });
+  const lista=Object.values(map).sort((a,b)=>{
+    const da=parseDataBR(a.data),db=parseDataBR(b.data);
+    return db-da;
+  });
+
+  const totalGeral=lista.reduce((a,d)=>a+d.total,0);
+  const mediaD=lista.length?Math.round(totalGeral/lista.length):0;
+
+  if(lista.length===0) return `<div class="empty"><span class="empty-ico">📅</span>Nenhuma movimentação no período</div>`;
+
+  return `
+    <div class="stat-grid">
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--gold2)">${totalGeral}</div>
+        <div class="stat-mini-lbl">Total de saídas</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--sky)">${mediaD}</div>
+        <div class="stat-mini-lbl">Média por dia</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="pip s"></span>Movimentações por Dia</div>
+        <button class="btn-export" onclick="exportarCSV('periodo')">📥 CSV</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Data</th><th>Ferramentas</th><th>EPIs</th><th>Total</th></tr></thead>
+        <tbody>
+          ${lista.map(d=>`<tr>
+            <td style="font-weight:600">${d.data}</td>
+            <td><span class="bx bx-y">${d.ferramentas}</span></td>
+            <td><span class="bx bx-v">${d.epis}</span></td>
+            <td style="font-family:var(--disp);font-size:16px;color:var(--sky)">${d.total}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ══ 6. ESTOQUE BAIXO ══ */
+function renderBaixo(){
+  const ef=getEstoqueF().filter(f=>f.q<=5);
+  const ee=getEstoqueE().filter(e=>e.q<=5);
+  const zeradosF=ef.filter(f=>f.q<=0);
+  const zeradosE=ee.filter(e=>e.q<=0);
+
+  let html='';
+
+  if(ef.length===0&&ee.length===0){
+    return `<div class="empty"><span class="empty-ico">✅</span>Nenhum item com estoque baixo!</div>`;
+  }
+
+  if(zeradosF.length>0||zeradosE.length>0){
+    html+=`<div class="alert">
+      <div class="alert-ico">🚨</div>
+      <div class="alert-body">
+        <div class="alert-title">${zeradosF.length+zeradosE.length} item(s) com estoque ZERADO</div>
+        <div class="alert-sub">Reposição urgente necessária</div>
+      </div>
+    </div>`;
+  }
+
+  if(ef.length>0){
+    html+=`<div class="card">
+      <div class="card-header"><div class="card-title"><span class="pip r"></span>Ferramentas com Estoque Baixo</div></div>
+      ${ef.map(f=>`
+        <div class="alert" style="background:${f.q<=0?'rgba(244,63,94,.08)':'rgba(232,160,32,.08)'};border-color:${f.q<=0?'rgba(244,63,94,.2)':'rgba(232,160,32,.2)'}">
+          <div class="alert-ico">${f.q<=0?'🔴':'🟡'}</div>
+          <div class="alert-body">
+            <div class="alert-title" style="color:${f.q<=0?'var(--rose)':'var(--gold2)'}">${f.nome}</div>
+            <div class="alert-sub">${f.tipo} · Estoque: ${f.q} unidade(s)</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  if(ee.length>0){
+    html+=`<div class="card">
+      <div class="card-header"><div class="card-title"><span class="pip v"></span>EPIs com Estoque Baixo</div></div>
+      ${ee.map(e=>`
+        <div class="alert" style="background:${e.q<=0?'rgba(244,63,94,.08)':'rgba(232,160,32,.08)'};border-color:${e.q<=0?'rgba(244,63,94,.2)':'rgba(232,160,32,.2)'}">
+          <div class="alert-ico">${e.q<=0?'🔴':'🟡'}</div>
+          <div class="alert-body">
+            <div class="alert-title" style="color:${e.q<=0?'var(--rose)':'var(--gold2)'}">${e.nome}</div>
+            <div class="alert-sub">${e.cat} · CA: ${e.ca||'—'} · Estoque: ${e.q} unidade(s)</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  return html;
+}
+
+/* ══ EXPORTAR CSV ══ */
+function exportarCSV(tipo){
+  let csv='',nome='';
+  const saidas=getSaidas();
+
+  if(tipo==='funcionario'){
+    csv='FUNCIONÁRIO,FERRAMENTAS,EPIS,TOTAL\n';
+    const map={};
+    saidas.forEach(s=>{
+      const f=s.funcionario||'—';
+      if(!map[f]) map[f]={ferr:0,epi:0};
+      if(s._m==='ferr') map[f].ferr+=s.qtd||0;
+      if(s._m==='epi') map[f].epi+=s.qtd||0;
+    });
+    csv+=Object.entries(map).map(([f,v])=>`${f},${v.ferr},${v.epi},${v.ferr+v.epi}`).join('\n');
+    nome='relatorio-funcionarios.csv';
+  } else if(tipo==='obra'){
+    csv='OBRA,FERRAMENTAS,EPIS,TOTAL\n';
+    const map={};
+    saidas.forEach(s=>{
+      const o=s.obra||'—';
+      if(!map[o]) map[o]={ferr:0,epi:0};
+      if(s._m==='ferr') map[o].ferr+=s.qtd||0;
+      if(s._m==='epi') map[o].epi+=s.qtd||0;
+    });
+    csv+=Object.entries(map).map(([o,v])=>`${o},${v.ferr},${v.epi},${v.ferr+v.epi}`).join('\n');
+    nome='relatorio-obras.csv';
+  } else if(tipo==='epis'){
+    csv='EPI,CATEGORIA,CA,FUNCIONÁRIOS,TOTAL\n';
+    const map={};
+    dados.esaidas.forEach(s=>{
+      const e=s.epi||'—';
+      if(!map[e]) map[e]={cat:s.cat||'—',ca:s.ca||'—',funcs:new Set(),total:0};
+      map[e].total+=s.qtd||0;
+      if(s.funcionario) map[e].funcs.add(s.funcionario);
+    });
+    csv+=Object.entries(map).map(([e,v])=>`${e},${v.cat},${v.ca},${v.funcs.size},${v.total}`).join('\n');
+    nome='relatorio-epis.csv';
+  } else if(tipo==='estoque-ferr'){
+    csv='FERRAMENTA,TIPO,ESTOQUE ATUAL,STATUS\n';
+    csv+=getEstoqueF().map(f=>`${f.nome},${f.tipo||'—'},${f.q},${f.q<=0?'Zerado':f.q<=5?'Baixo':'OK'}`).join('\n');
+    nome='estoque-ferramentas.csv';
+  } else if(tipo==='estoque-epi'){
+    csv='EPI,CATEGORIA,CA,ESTOQUE ATUAL,STATUS\n';
+    csv+=getEstoqueE().map(e=>`${e.nome},${e.cat||'—'},${e.ca||'—'},${e.q},${e.q<=0?'Zerado':e.q<=5?'Baixo':'OK'}`).join('\n');
+    nome='estoque-epis.csv';
+  } else if(tipo==='periodo'){
+    csv='DATA,FERRAMENTAS,EPIS,TOTAL\n';
+    const map={};
+    saidas.forEach(s=>{
+      const d=s.data||'—';
+      if(!map[d]) map[d]={ferr:0,epi:0};
+      if(s._m==='ferr') map[d].ferr+=s.qtd||0;
+      if(s._m==='epi') map[d].epi+=s.qtd||0;
+    });
+    csv+=Object.entries(map).map(([d,v])=>`${d},${v.ferr},${v.epi},${v.ferr+v.epi}`).join('\n');
+    nome='relatorio-periodo.csv';
+  }
+
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=nome;a.click();
+}
+
+init();
+</script>
+</body>
+</html>
