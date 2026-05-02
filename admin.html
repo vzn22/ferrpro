@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#09090b">
+<title>ProAlmoxarife — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#09090b;--ink1:#111116;--ink2:#18181f;--ink3:#22222d;
+  --wire:rgba(255,255,255,.07);--wire2:rgba(255,255,255,.12);
+  --gold:#e8a020;--gold2:#ffbe4d;--gold-g:rgba(232,160,32,.13);
+  --rose:#f43f5e;--rose-g:rgba(244,63,94,.13);
+  --lime:#84cc16;--lime-g:rgba(132,204,22,.13);
+  --violet:#a78bfa;--violet-g:rgba(167,139,250,.13);
+  --snow:#fafafa;--mist:#71717a;--fog:#3f3f46;
+  --sans:'Figtree',sans-serif;--disp:'Bebas Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--ink);color:var(--snow);font-family:var(--sans);min-height:100dvh;-webkit-font-smoothing:antialiased}
+
+/* TOPBAR */
+.topbar{background:rgba(9,9,11,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--wire);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.brand{font-family:var(--disp);font-size:20px;letter-spacing:2px}
+.brand em{color:var(--gold);font-style:normal}
+.admin-badge{background:var(--rose-g);color:var(--rose);border:1px solid rgba(244,63,94,.2);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:1px}
+.btn-logout{background:none;border:1px solid var(--wire2);color:var(--mist);font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--sans)}
+.btn-logout:hover{border-color:var(--rose);color:var(--rose)}
+
+/* MAIN */
+.main{padding:20px 16px 40px;max-width:700px;margin:0 auto}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--ink2);border:1px solid var(--wire);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-g::after{background:linear-gradient(90deg,var(--lime),transparent)}
+.stat-r::after{background:linear-gradient(90deg,var(--rose),transparent)}
+.stat-y::after{background:linear-gradient(90deg,var(--gold),transparent)}
+.stat-ico{font-size:20px;margin-bottom:6px;display:block}
+.stat-val{font-family:var(--disp);font-size:30px;letter-spacing:-1px;line-height:1}
+.stat-lbl{font-size:11px;color:var(--mist);margin-top:3px}
+
+/* CARD */
+.card{background:var(--ink2);border:1px solid var(--wire);border-radius:16px;padding:18px;margin-bottom:14px}
+.card-title{font-family:var(--disp);font-size:17px;letter-spacing:.8px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);flex-shrink:0}
+.pip.r{background:var(--rose);box-shadow:0 0 8px var(--rose)}
+
+/* FORM */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--fog);margin-bottom:7px}
+.fi,.fs{width:100%;background:var(--ink3);border:1px solid var(--wire2);border-radius:10px;padding:13px 14px;color:var(--snow);font-family:var(--sans);font-size:15px;font-weight:500;outline:none;transition:all .2s;-webkit-appearance:none;appearance:none}
+.fi:focus,.fs:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,160,32,.09)}
+.fi::placeholder{color:var(--fog)}
+.sw{position:relative}
+.sw::after{content:'▾';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--fog);pointer-events:none;font-size:12px}
+.sw .fs{padding-right:36px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTON */
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:var(--disp);font-size:16px;letter-spacing:1px;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.975)}
+.btn-g{background:var(--gold);color:#000;box-shadow:0 6px 20px rgba(232,160,32,.25)}
+.btn-r{background:var(--rose);color:#fff}
+.btn-sm{width:auto;padding:7px 14px;font-size:13px;border-radius:8px}
+
+/* ASSINANTES LIST */
+.assinante{background:var(--ink3);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;border-left:3px solid transparent}
+.assinante.ativo{border-left-color:var(--lime)}
+.assinante.vencido{border-left-color:var(--rose)}
+.assinante.aviso{border-left-color:var(--gold)}
+.ass-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ass-email{font-size:14px;font-weight:700}
+.ass-meta{font-size:12px;color:var(--mist);line-height:1.8}
+.ass-actions{display:flex;gap:6px;margin-top:10px}
+.badge{font-family:var(--disp);font-size:12px;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+.b-g{background:var(--lime-g);color:var(--lime)}
+.b-r{background:var(--rose-g);color:var(--rose)}
+.b-y{background:var(--gold-g);color:var(--gold2)}
+.b-v{background:var(--violet-g);color:var(--violet)}
+
+/* SEARCH */
+.sq{display:flex;align-items:center;background:var(--ink2);border:1px solid var(--wire2);border-radius:10px;padding:0 13px;margin-bottom:14px}
+.sq:focus-within{border-color:var(--gold)}
+.si{flex:1;background:none;border:none;color:var(--snow);font-family:var(--sans);font-size:15px;padding:12px 0 12px 9px;outline:none}
+.si::placeholder{color:var(--fog)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--ink3);border:1px solid var(--wire2);border-radius:30px;padding:12px 22px;font-size:13px;font-weight:700;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);max-width:88vw;text-align:center;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--lime);color:var(--lime)}
+#toast.err{border-color:var(--rose);color:var(--rose)}
+#toast.info{border-color:var(--gold);color:var(--gold2)}
+
+/* LOGIN ADMIN */
+.login-box{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999}
+.login-card{background:var(--ink2);border:1px solid var(--wire);border-radius:20px;padding:32px;width:100%;max-width:380px;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--rose),transparent)}
+.login-title{font-family:var(--disp);font-size:24px;letter-spacing:1px;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--mist);margin-bottom:24px}
+.err-box{background:var(--rose-g);border:1px solid rgba(244,63,94,.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--rose);margin-bottom:12px;display:none}
+.err-box.show{display:block}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--fog)}
+.empty-ico{font-size:36px;margin-bottom:8px;display:block;opacity:.35}
+
+/* RENOVAR MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal.show{display:flex}
+.modal-box{background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:500px;border-top:1px solid var(--wire)}
+.modal-handle{width:40px;height:4px;background:var(--wire2);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-family:var(--disp);font-size:20px;letter-spacing:.5px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN ADMIN -->
+<div class="login-box" id="login-box">
+  <div class="login-card">
+    <div class="login-title">🔐 Admin</div>
+    <div class="login-sub">Acesso restrito — ProAlmoxarife</div>
+    <div class="err-box" id="login-err">Senha incorreta!</div>
+    <div class="fg"><label class="fl">Senha Admin</label><input id="admin-pass" class="fi" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAdmin()"></div>
+    <button class="btn btn-g" onclick="checkAdmin()">Entrar</button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">Pro<em>Almoxarife</em></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="admin-badge">ADMIN</span>
+    <button class="btn-logout" onclick="location.href='index.html'">← Site</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat stat-g"><span class="stat-ico">✅</span><div class="stat-val" id="cnt-ativos">0</div><div class="stat-lbl">Ativos</div></div>
+    <div class="stat stat-r"><span class="stat-ico">❌</span><div class="stat-val" id="cnt-vencidos">0</div><div class="stat-lbl">Vencidos</div></div>
+    <div class="stat stat-y"><span class="stat-ico">⚠️</span><div class="stat-val" id="cnt-aviso">0</div><div class="stat-lbl">Vencem em 5d</div></div>
+  </div>
+
+  <!-- ADICIONAR ASSINANTE -->
+  <div class="card">
+    <div class="card-title"><span class="pip"></span>Adicionar Assinante</div>
+    <div class="fg"><label class="fl">E-mail do Cliente</label><input id="new-email" class="fi" type="email" placeholder="cliente@email.com"></div>
+    <div class="row">
+      <div class="fg">
+        <label class="fl">Plano</label>
+        <div class="sw"><select id="new-plano" class="fs">
+          <option value="starter">Starter — R$49</option>
+          <option value="pro" selected>Pro — R$99</option>
+          <option value="enterprise">Enterprise — R$199</option>
+        </select></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Dias de acesso</label>
+        <div class="sw"><select id="new-dias" class="fs">
+          <option value="30" selected>30 dias</option>
+          <option value="60">60 dias</option>
+          <option value="90">90 dias</option>
+          <option value="365">1 ano</option>
+        </select></div>
+      </div>
+    </div>
+    <button class="btn btn-g" id="btn-add" onclick="addAssinante()">✅ Liberar Acesso</button>
+  </div>
+
+  <!-- LISTA ASSINANTES -->
+  <div class="card">
+    <div class="card-title"><span class="pip"></span>Assinantes (<span id="total-ass">0</span>)</div>
+    <div class="sq"><span style="color:var(--fog)">⌕</span><input class="si" placeholder="Buscar por e-mail…" oninput="buscar(this.value)"></div>
+    <div id="lista-ass">
+      <div class="empty"><span class="empty-ico">👤</span>Nenhum assinante ainda</div>
+    </div>
+  </div>
+
+  <!-- RECEITA -->
+  <div class="card">
+    <div class="card-title"><span class="pip"></span>Receita Estimada</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+      <div>
+        <div style="font-family:var(--disp);font-size:24px;color:var(--gold)" id="rec-starter">R$0</div>
+        <div style="font-size:11px;color:var(--mist)">Starter</div>
+      </div>
+      <div>
+        <div style="font-family:var(--disp);font-size:24px;color:var(--gold)" id="rec-pro">R$0</div>
+        <div style="font-size:11px;color:var(--mist)">Pro</div>
+      </div>
+      <div>
+        <div style="font-family:var(--disp);font-size:24px;color:var(--gold)" id="rec-ent">R$0</div>
+        <div style="font-size:11px;color:var(--mist)">Enterprise</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--wire);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--mist)">Total mensal estimado</span>
+      <span style="font-family:var(--disp);font-size:28px;color:var(--lime)" id="rec-total">R$0</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL RENOVAR -->
+<div class="modal" id="modal-renovar">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Renovar Acesso</div>
+    <input type="hidden" id="modal-email">
+    <div class="fg"><label class="fl">Dias adicionais</label>
+      <div class="sw"><select id="modal-dias" class="fs">
+        <option value="30">+30 dias</option>
+        <option value="60">+60 dias</option>
+        <option value="90">+90 dias</option>
+        <option value="365">+1 ano</option>
+      </select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-g" onclick="renovar()">✅ Renovar</button>
+      <button class="btn" style="background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// ⚠️  SUBSTITUA ESTAS CREDENCIAIS
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://cahyauugshenwqbxvigg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
+// ══════════════════════════════════════════
+
+// ⚠️ DEFINA SUA SENHA ADMIN AQUI
+const ADMIN_PASSWORD = 'proalmoxarife2025';
+// ══════════════════════════════════════════
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let assinantes = [];
+let busca = '';
+
+/* ══ ADMIN LOGIN ══ */
+function checkAdmin(){
+  const pass = document.getElementById('admin-pass').value;
+  if(pass === ADMIN_PASSWORD){
+    document.getElementById('login-box').style.display='none';
+    init();
+  } else {
+    document.getElementById('login-err').classList.add('show');
+    document.getElementById('admin-pass').value='';
+  }
+}
+
+/* ══ TOAST ══ */
+function toast(msg,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+t;
+  setTimeout(()=>el.className='',2700);
+}
+
+/* ══ INIT ══ */
+async function init(){
+  await loadAssinantes();
+}
+
+/* ══ LOAD ══ */
+async function loadAssinantes(){
+  const {data,error}=await sb.from('assinantes').select('*').order('created_at',{ascending:false});
+  if(error){toast('Erro ao carregar','err');return}
+  assinantes=data||[];
+  renderStats();
+  renderLista();
+  renderReceita();
+}
+
+/* ══ STATUS ══ */
+function getStatus(ass){
+  if(!ass.ativo) return 'vencido';
+  const hoje=new Date();
+  const venc=new Date(ass.vencimento);
+  const diff=Math.ceil((venc-hoje)/(1000*60*60*24));
+  if(diff<=0) return 'vencido';
+  if(diff<=5) return 'aviso';
+  return 'ativo';
+}
+function getDiasRestantes(ass){
+  const hoje=new Date();
+  const venc=new Date(ass.vencimento);
+  return Math.ceil((venc-hoje)/(1000*60*60*24));
+}
+
+/* ══ STATS ══ */
+function renderStats(){
+  const ativos=assinantes.filter(a=>getStatus(a)==='ativo').length;
+  const vencidos=assinantes.filter(a=>getStatus(a)==='vencido').length;
+  const aviso=assinantes.filter(a=>getStatus(a)==='aviso').length;
+  document.getElementById('cnt-ativos').textContent=ativos;
+  document.getElementById('cnt-vencidos').textContent=vencidos;
+  document.getElementById('cnt-aviso').textContent=aviso;
+  document.getElementById('total-ass').textContent=assinantes.length;
+}
+
+/* ══ RECEITA ══ */
+function renderReceita(){
+  const ativos=assinantes.filter(a=>getStatus(a)!=='vencido');
+  const precos={starter:49,pro:99,enterprise:199};
+  const starter=ativos.filter(a=>a.plano==='starter').length*49;
+  const pro=ativos.filter(a=>a.plano==='pro').length*99;
+  const ent=ativos.filter(a=>a.plano==='enterprise').length*199;
+  document.getElementById('rec-starter').textContent=`R$${starter}`;
+  document.getElementById('rec-pro').textContent=`R$${pro}`;
+  document.getElementById('rec-ent').textContent=`R$${ent}`;
+  document.getElementById('rec-total').textContent=`R$${starter+pro+ent}`;
+}
+
+/* ══ LISTA ══ */
+function buscar(v){busca=v.toLowerCase();renderLista()}
+function renderLista(){
+  const el=document.getElementById('lista-ass');
+  let lista=assinantes;
+  if(busca) lista=lista.filter(a=>(a.email||'').toLowerCase().includes(busca));
+  if(lista.length===0){el.innerHTML='<div class="empty"><span class="empty-ico">👤</span>Nenhum assinante encontrado</div>';return}
+  const planLabel={starter:'Starter R$49',pro:'Pro R$99',enterprise:'Enterprise R$199'};
+  el.innerHTML=lista.map(a=>{
+    const status=getStatus(a);
+    const dias=getDiasRestantes(a);
+    const vencStr=new Date(a.vencimento).toLocaleDateString('pt-BR');
+    const badgeClass=status==='ativo'?'b-g':status==='aviso'?'b-y':'b-r';
+    const badgeText=status==='ativo'?`✅ Ativo (${dias}d)`:`status==='aviso'?`⚠️ Vence em ${dias}d`:'❌ Vencido'`;
+    return`<div class="assinante ${status}">
+      <div class="ass-top">
+        <span class="ass-email">${a.email}</span>
+        <span class="badge ${badgeClass}">${status==='ativo'?`✅ ${dias}d`:status==='aviso'?`⚠️ ${dias}d`:'❌ Vencido'}</span>
+      </div>
+      <div class="ass-meta">
+        📦 ${planLabel[a.plano]||a.plano} &nbsp;·&nbsp; 📅 Vence: ${vencStr}
+      </div>
+      <div class="ass-actions">
+        <button class="btn btn-g btn-sm" onclick="openModal('${a.email}')">🔄 Renovar</button>
+        <button class="btn btn-sm" style="background:var(--rose-g);color:var(--rose);border:1px solid rgba(244,63,94,.2)" onclick="bloquear('${a.email}',${!a.ativo})">${a.ativo?'🚫 Bloquear':'✅ Reativar'}</button>
+        <button class="btn btn-sm" style="background:var(--ink3);color:var(--fog);border:1px solid var(--wire)" onclick="remover('${a.email}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ ADICIONAR ══ */
+async function addAssinante(){
+  const email=document.getElementById('new-email').value.trim().toLowerCase();
+  const plano=document.getElementById('new-plano').value;
+  const dias=parseInt(document.getElementById('new-dias').value);
+  if(!email) return toast('Informe o e-mail','err');
+  if(assinantes.find(a=>a.email===email)) return toast('E-mail já cadastrado','err');
+  const vencimento=new Date();
+  vencimento.setDate(vencimento.getDate()+dias);
+  document.getElementById('btn-add').disabled=true;
+  const {error}=await sb.from('assinantes').insert({
+    email, plano, ativo:true,
+    vencimento:vencimento.toISOString(),
+    dias_contratados:dias
+  });
+  document.getElementById('btn-add').disabled=false;
+  if(error){toast('Erro: '+error.message,'err');return}
+  document.getElementById('new-email').value='';
+  toast(`✅ ${email} liberado por ${dias} dias!`,'ok');
+  await loadAssinantes();
+}
+
+/* ══ RENOVAR ══ */
+function openModal(email){
+  document.getElementById('modal-email').value=email;
+  document.getElementById('modal-renovar').classList.add('show');
+}
+function closeModal(){document.getElementById('modal-renovar').classList.remove('show')}
+async function renovar(){
+  const email=document.getElementById('modal-email').value;
+  const dias=parseInt(document.getElementById('modal-dias').value);
+  const ass=assinantes.find(a=>a.email===email);
+  if(!ass) return;
+  const base=new Date(ass.vencimento)>new Date()?new Date(ass.vencimento):new Date();
+  base.setDate(base.getDate()+dias);
+  const {error}=await sb.from('assinantes').update({vencimento:base.toISOString(),ativo:true}).eq('email',email);
+  if(error){toast('Erro ao renovar','err');return}
+  closeModal();
+  toast(`✅ ${email} renovado por +${dias} dias!`,'ok');
+  await loadAssinantes();
+}
+
+/* ══ BLOQUEAR ══ */
+async function bloquear(email,reativar){
+  const {error}=await sb.from('assinantes').update({ativo:reativar}).eq('email',email);
+  if(error){toast('Erro','err');return}
+  toast(reativar?`✅ ${email} reativado`:`🚫 ${email} bloqueado`,'ok');
+  await loadAssinantes();
+}
+
+/* ══ REMOVER ══ */
+async function remover(email){
+  if(!confirm(`Remover ${email}?`)) return;
+  await sb.from('assinantes').delete().eq('email',email);
+  toast('Removido','info');
+  await loadAssinantes();
+}
+
+// Enter na senha
+document.getElementById('admin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')checkAdmin()});
+</script>
+</body>
+</html>

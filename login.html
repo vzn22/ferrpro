@@ -98,7 +98,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="fg"><label class="fl">Senha</label><input id="login-pass" class="fi" type="password" placeholder="••••••••"></div>
       <button class="btn btn-gold" id="btn-login" onclick="doLogin()">Entrar</button>
       <div class="divider">ou</div>
-      <button class="btn" style="background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)" onclick="showTab('register',document.querySelectorAll('.tab')[1])">Criar conta grátis — 14 dias</button>
+      <button class="btn" style="background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)" onclick="showTab('register',document.querySelectorAll('.tab')[1])">Criar Conta</button>
     </div>
 
     <!-- REGISTER -->
@@ -109,7 +109,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="fg"><label class="fl">Seu Nome</label><input id="reg-nome" class="fi" type="text" placeholder="Ex: Carlos Mendes"></div>
       <div class="fg"><label class="fl">E-mail</label><input id="reg-email" class="fi" type="email" placeholder="seu@email.com"></div>
       <div class="fg"><label class="fl">Senha</label><input id="reg-pass" class="fi" type="password" placeholder="Mínimo 6 caracteres"></div>
-      <button class="btn btn-gold" id="btn-reg" onclick="doRegister()">Criar Conta Grátis</button>
+      <button class="btn btn-gold" id="btn-reg" onclick="doRegister()">Criar Conta</button>
     </div>
 
   </div>
@@ -147,7 +147,7 @@ function showTab(tab, btn){
 function setLoading(btnId, loading){
   const btn=document.getElementById(btnId);
   btn.disabled=loading;
-  btn.innerHTML=loading?'<span class="spinner"></span>Aguarde...':(btnId==='btn-login'?'Entrar':'Criar Conta Grátis');
+  btn.innerHTML=loading?'<span class="spinner"></span>Aguarde...':(btnId==='btn-login'?'Entrar':'Criar Conta');
 }
 
 function showErr(id,msg){

@@ -420,6 +420,20 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   </div>
 </div>
 
+
+<!-- BLOQUEIO DE ACESSO -->
+<div id="tela-bloqueio" style="display:none;position:fixed;inset:0;z-index:999;background:var(--ink);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center">
+  <div style="font-size:64px;margin-bottom:20px">🔒</div>
+  <div style="font-family:var(--disp);font-size:36px;letter-spacing:1px;margin-bottom:12px;color:var(--snow)">Acesso Bloqueado</div>
+  <div style="font-size:15px;color:var(--mist);max-width:340px;line-height:1.6;margin-bottom:32px" id="bloqueio-msg">Sua assinatura venceu. Entre em contato para renovar.</div>
+  <div style="background:var(--ink2);border:1px solid var(--wire);border-radius:16px;padding:24px;max-width:340px;width:100%;margin-bottom:20px">
+    <div style="font-size:13px;color:var(--mist);margin-bottom:12px">Para renovar sua assinatura:</div>
+    <div style="font-family:var(--disp);font-size:18px;letter-spacing:1px;color:var(--gold);margin-bottom:8px">📱 Entre em contato</div>
+    <div style="font-size:13px;color:var(--mist)">Informe seu e-mail e solicite a renovação</div>
+  </div>
+  <button onclick="doLogout()" style="background:none;border:1px solid var(--wire2);color:var(--mist);padding:10px 20px;border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:14px">Sair da conta</button>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -445,6 +459,20 @@ if(isConfigured){
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
+
+/* ══ BLOQUEIO ══ */
+function showBloqueio(assData){
+  const el = document.getElementById('tela-bloqueio');
+  el.style.display='flex';
+  if(!assData){
+    document.getElementById('bloqueio-msg').textContent = 'Seu e-mail não possui uma assinatura ativa. Entre em contato para contratar.';
+  } else if(!assData.ativo){
+    document.getElementById('bloqueio-msg').textContent = 'Sua assinatura foi suspensa. Entre em contato para reativar.';
+  } else {
+    document.getElementById('bloqueio-msg').textContent = 'Sua assinatura venceu. Entre em contato para renovar.';
+  }
+}
+
 /* ══ INIT ══ */
 async function init(){
   if(!isConfigured){
@@ -466,6 +494,18 @@ async function init(){
     if(!session){ window.location.href='login.html'; return; }
     USER=session.user;
     COMPANY_ID=USER.user_metadata?.empresa||USER.email;
+
+    // ══ VERIFICAR ASSINATURA ══
+    const email = USER.email.toLowerCase();
+    const {data:assData} = await sb.from('assinantes').select('*').eq('email',email).single();
+    if(!assData || !assData.ativo || new Date(assData.vencimento) < new Date()){
+      // Bloquear acesso
+      document.getElementById('loading').style.display='none';
+      showBloqueio(assData);
+      return;
+    }
+    // ══════════════════════════
+
     document.getElementById('topbar-empresa').textContent=COMPANY_ID.substring(0,15);
     document.getElementById('loading').style.display='none';
     document.getElementById('topbar').style.display='flex';
