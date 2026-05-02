@@ -421,17 +421,48 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 </div>
 
 
-<!-- BLOQUEIO DE ACESSO -->
-<div id="tela-bloqueio" style="display:none;position:fixed;inset:0;z-index:999;background:var(--ink);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center">
-  <div style="font-size:64px;margin-bottom:20px">🔒</div>
-  <div style="font-family:var(--disp);font-size:36px;letter-spacing:1px;margin-bottom:12px;color:var(--snow)">Acesso Bloqueado</div>
-  <div style="font-size:15px;color:var(--mist);max-width:340px;line-height:1.6;margin-bottom:32px" id="bloqueio-msg">Sua assinatura venceu. Entre em contato para renovar.</div>
-  <div style="background:var(--ink2);border:1px solid var(--wire);border-radius:16px;padding:24px;max-width:340px;width:100%;margin-bottom:20px">
-    <div style="font-size:13px;color:var(--mist);margin-bottom:12px">Para renovar sua assinatura:</div>
-    <div style="font-family:var(--disp);font-size:18px;letter-spacing:1px;color:var(--gold);margin-bottom:8px">📱 Entre em contato</div>
-    <div style="font-size:13px;color:var(--mist)">Informe seu e-mail e solicite a renovação</div>
+<!-- BLOQUEIO DE ACESSO / TRIAL EXPIRADO -->
+<div id="tela-bloqueio" style="display:none;position:fixed;inset:0;z-index:999;background:var(--ink);flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="max-width:420px;width:100%;text-align:center">
+    
+    <!-- ICON + TITLE -->
+    <div style="font-size:56px;margin-bottom:16px" id="bloqueio-ico">⏰</div>
+    <div style="font-family:var(--disp);font-size:34px;letter-spacing:1px;margin-bottom:10px;color:var(--snow)" id="bloqueio-titulo">Teste Grátis Encerrado</div>
+    <div style="font-size:14px;color:var(--mist);line-height:1.6;margin-bottom:28px" id="bloqueio-msg">Seu período de teste de 7 dias acabou. Escolha um plano para continuar usando o ProAlmoxarife.</div>
+
+    <!-- PLANS -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      
+      <!-- STARTER -->
+      <div style="background:var(--ink2);border:1px solid var(--wire);border-radius:14px;padding:16px;text-align:left;position:relative">
+        <div style="font-family:var(--disp);font-size:18px;letter-spacing:.5px;margin-bottom:4px">Starter</div>
+        <div style="font-family:var(--disp);font-size:32px;color:var(--gold);letter-spacing:-1px;line-height:1">R$49<span style="font-size:14px;color:var(--mist)">/mês</span></div>
+        <div style="font-size:12px;color:var(--mist);margin:8px 0">1 obra · até 5 usuários · ferramentas ilimitadas</div>
+        <a href="https://cakto.com.br" target="_blank" style="display:block;background:var(--ink3);color:var(--snow);border:1px solid var(--wire2);padding:10px;border-radius:8px;text-align:center;text-decoration:none;font-family:var(--disp);font-size:14px;letter-spacing:.5px;margin-top:8px">Assinar Starter</a>
+      </div>
+
+      <!-- PRO -->
+      <div style="background:linear-gradient(135deg,var(--ink2),rgba(232,160,32,.08));border:1px solid rgba(232,160,32,.3);border-radius:14px;padding:16px;text-align:left;position:relative">
+        <div style="position:absolute;top:12px;right:12px;background:var(--gold);color:#000;font-size:9px;font-weight:800;letter-spacing:1px;padding:3px 8px;border-radius:20px">POPULAR</div>
+        <div style="font-family:var(--disp);font-size:18px;letter-spacing:.5px;margin-bottom:4px">Pro</div>
+        <div style="font-family:var(--disp);font-size:32px;color:var(--gold);letter-spacing:-1px;line-height:1">R$99<span style="font-size:14px;color:var(--mist)">/mês</span></div>
+        <div style="font-size:12px;color:var(--mist);margin:8px 0">Obras ilimitadas · até 20 usuários · relatórios</div>
+        <a href="https://cakto.com.br" target="_blank" style="display:block;background:var(--gold);color:#000;padding:10px;border-radius:8px;text-align:center;text-decoration:none;font-family:var(--disp);font-size:14px;letter-spacing:.5px;margin-top:8px">Assinar Pro</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div style="background:var(--ink2);border:1px solid var(--wire);border-radius:14px;padding:16px;text-align:left">
+        <div style="font-family:var(--disp);font-size:18px;letter-spacing:.5px;margin-bottom:4px">Enterprise</div>
+        <div style="font-family:var(--disp);font-size:32px;color:var(--gold);letter-spacing:-1px;line-height:1">R$199<span style="font-size:14px;color:var(--mist)">/mês</span></div>
+        <div style="font-size:12px;color:var(--mist);margin:8px 0">Tudo ilimitado · suporte prioritário</div>
+        <a href="https://cakto.com.br" target="_blank" style="display:block;background:var(--ink3);color:var(--snow);border:1px solid var(--wire2);padding:10px;border-radius:8px;text-align:center;text-decoration:none;font-family:var(--disp);font-size:14px;letter-spacing:.5px;margin-top:8px">Assinar Enterprise</a>
+      </div>
+
+    </div>
+
+    <div style="font-size:12px;color:var(--fog);margin-bottom:16px">Após o pagamento entre em contato enviando seu e-mail para liberar o acesso</div>
+    <button onclick="doLogout()" style="background:none;border:1px solid var(--wire2);color:var(--mist);padding:10px 20px;border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:13px;width:100%">Sair da conta</button>
   </div>
-  <button onclick="doLogout()" style="background:none;border:1px solid var(--wire2);color:var(--mist);padding:10px 20px;border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:14px">Sair da conta</button>
 </div>
 
 <div id="toast"></div>
@@ -464,12 +495,25 @@ if(isConfigured){
 function showBloqueio(assData){
   const el = document.getElementById('tela-bloqueio');
   el.style.display='flex';
+  const ico = document.getElementById('bloqueio-ico');
+  const titulo = document.getElementById('bloqueio-titulo');
+  const msg = document.getElementById('bloqueio-msg');
   if(!assData){
-    document.getElementById('bloqueio-msg').textContent = 'Seu e-mail não possui uma assinatura ativa. Entre em contato para contratar.';
+    ico.textContent='⏰';
+    titulo.textContent='Teste Grátis Encerrado';
+    msg.textContent='Seu período de teste de 7 dias acabou. Escolha um plano para continuar usando o ProAlmoxarife.';
   } else if(!assData.ativo){
-    document.getElementById('bloqueio-msg').textContent = 'Sua assinatura foi suspensa. Entre em contato para reativar.';
+    ico.textContent='🚫';
+    titulo.textContent='Acesso Suspenso';
+    msg.textContent='Sua conta foi suspensa. Entre em contato para reativar seu acesso.';
+  } else if(assData.plano==='trial'){
+    ico.textContent='⏰';
+    titulo.textContent='Teste Grátis Encerrado';
+    msg.textContent='Seu período de teste de 7 dias acabou. Escolha um plano para continuar.';
   } else {
-    document.getElementById('bloqueio-msg').textContent = 'Sua assinatura venceu. Entre em contato para renovar.';
+    ico.textContent='🔒';
+    titulo.textContent='Assinatura Vencida';
+    msg.textContent='Sua assinatura venceu. Renove para continuar usando o ProAlmoxarife.';
   }
 }
 
@@ -495,11 +539,22 @@ async function init(){
     USER=session.user;
     COMPANY_ID=USER.user_metadata?.empresa||USER.email;
 
-    // ══ VERIFICAR ASSINATURA ══
+    // ══ VERIFICAR ASSINATURA / TRIAL ══
     const email = USER.email.toLowerCase();
     const {data:assData} = await sb.from('assinantes').select('*').eq('email',email).single();
-    if(!assData || !assData.ativo || new Date(assData.vencimento) < new Date()){
-      // Bloquear acesso
+
+    if(!assData){
+      // Novo usuário — criar trial de 7 dias automaticamente
+      const vencTrial = new Date();
+      vencTrial.setDate(vencTrial.getDate() + 7);
+      await sb.from('assinantes').insert({
+        email, plano:'trial', ativo:true,
+        vencimento: vencTrial.toISOString(),
+        dias_contratados: 7
+      });
+      // Continua normalmente no trial
+    } else if(!assData.ativo || new Date(assData.vencimento) < new Date()){
+      // Trial ou assinatura vencida
       document.getElementById('loading').style.display='none';
       showBloqueio(assData);
       return;

@@ -142,10 +142,11 @@ body{background:var(--ink);color:var(--snow);font-family:var(--sans);min-height:
 <div class="main">
 
   <!-- STATS -->
-  <div class="stats">
+  <div class="stats" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat stat-g"><span class="stat-ico">✅</span><div class="stat-val" id="cnt-ativos">0</div><div class="stat-lbl">Ativos</div></div>
     <div class="stat stat-r"><span class="stat-ico">❌</span><div class="stat-val" id="cnt-vencidos">0</div><div class="stat-lbl">Vencidos</div></div>
     <div class="stat stat-y"><span class="stat-ico">⚠️</span><div class="stat-val" id="cnt-aviso">0</div><div class="stat-lbl">Vencem em 5d</div></div>
+    <div class="stat stat-v" style="position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--violet),transparent)"></div><span class="stat-ico">🆓</span><div class="stat-val" id="cnt-trial">0</div><div class="stat-lbl">Em Teste</div></div>
   </div>
 
   <!-- ADICIONAR ASSINANTE -->
@@ -302,10 +303,13 @@ function renderStats(){
   const ativos=assinantes.filter(a=>getStatus(a)==='ativo').length;
   const vencidos=assinantes.filter(a=>getStatus(a)==='vencido').length;
   const aviso=assinantes.filter(a=>getStatus(a)==='aviso').length;
+  const trials=assinantes.filter(a=>a.plano==='trial'&&getStatus(a)!=='vencido').length;
   document.getElementById('cnt-ativos').textContent=ativos;
   document.getElementById('cnt-vencidos').textContent=vencidos;
   document.getElementById('cnt-aviso').textContent=aviso;
   document.getElementById('total-ass').textContent=assinantes.length;
+  const trialEl=document.getElementById('cnt-trial');
+  if(trialEl) trialEl.textContent=trials;
 }
 
 /* ══ RECEITA ══ */
@@ -328,7 +332,7 @@ function renderLista(){
   let lista=assinantes;
   if(busca) lista=lista.filter(a=>(a.email||'').toLowerCase().includes(busca));
   if(lista.length===0){el.innerHTML='<div class="empty"><span class="empty-ico">👤</span>Nenhum assinante encontrado</div>';return}
-  const planLabel={starter:'Starter R$49',pro:'Pro R$99',enterprise:'Enterprise R$199'};
+  const planLabel={starter:'Starter R$49',pro:'Pro R$99',enterprise:'Enterprise R$199',trial:'🆓 Teste 7 dias'};
   el.innerHTML=lista.map(a=>{
     const status=getStatus(a);
     const dias=getDiasRestantes(a);
