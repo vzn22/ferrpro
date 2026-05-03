@@ -208,7 +208,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 
   <!-- LISTA -->
   <div id="lista">
-    <div class="loading"><span class="spin"></span>Carregando...</div>
+    <div class="loading"><span class="spin"></span>Carregando registros...</div>
   </div>
 
 </div>
@@ -223,29 +223,39 @@ let tipoAtual = 'ferramentas';
 let dados = { fsaidas:[], fentradas:[], esaidas:[], eentradas:[], obras:[], funcionarios:[] };
 
 async function init(){
-  const {data:{session}} = await sb.auth.getSession();
-  if(!session){ window.location.href='login.html'; return; }
-  USER = session.user;
-  await loadDados();
-  preencherFiltros();
-  renderLista();
+  try{
+    const {data:{session}} = await sb.auth.getSession();
+    if(!session){ window.location.href='login.html'; return; }
+    USER = session.user;
+    await loadDados();
+    preencherFiltros();
+    renderLista();
+  } catch(e){
+    console.error('Erro init:', e);
+    document.getElementById('lista').innerHTML = `
+      <div class="empty">
+        <span class="empty-ico">⚠️</span>
+        <div class="empty-txt">Erro ao carregar dados.<br><button onclick="init()" style="margin-top:10px;background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:var(--sans);font-weight:700">Tentar novamente</button></div>
+      </div>`;
+  }
 }
 
 async function loadDados(){
   const uid = USER.id;
-  const [fs,fe,es,ee,o,fn] = await Promise.all([
-    sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}),
-    sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}),
-    sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}),
-    sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}),
-    sb.from('obras').select('nome').eq('user_id',uid),
-    sb.from('funcionarios').select('nome').eq('user_id',uid),
-  ]);
-  dados.fsaidas  = (fs.data||[]).map(x=>({...x,_item:x.ferramenta_nome,_qtd:x.quantidade,_tipo:'saida',_cat:'ferr'}));
-  dados.fentradas= (fe.data||[]).map(x=>({...x,_item:x.ferramenta_nome,_qtd:x.quantidade,_tipo:'entrada',_cat:'ferr'}));
-  dados.esaidas  = (es.data||[]).map(x=>({...x,_item:x.epi_nome,_qtd:x.quantidade,_tipo:'saida',_cat:'epi'}));
-  dados.eentradas= (ee.data||[]).map(x=>({...x,_item:x.epi_nome,_qtd:x.quantidade,_tipo:'entrada',_cat:'epi'}));
-  dados.obras    = (o.data||[]).map(x=>x.nome);
+  
+  // Carregar um por um para evitar timeout
+  const fs = await sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(500);
+  const fe = await sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(500);
+  const es = await sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(500);
+  const ee = await sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(500);
+  const o  = await sb.from('obras').select('nome').eq('user_id',uid);
+  const fn = await sb.from('funcionarios').select('nome').eq('user_id',uid);
+
+  dados.fsaidas   = (fs.data||[]).map(x=>({...x,_item:x.ferramenta_nome,_qtd:x.quantidade,_tipo:'saida',_cat:'ferr'}));
+  dados.fentradas = (fe.data||[]).map(x=>({...x,_item:x.ferramenta_nome,_qtd:x.quantidade,_tipo:'entrada',_cat:'ferr'}));
+  dados.esaidas   = (es.data||[]).map(x=>({...x,_item:x.epi_nome,_qtd:x.quantidade,_tipo:'saida',_cat:'epi'}));
+  dados.eentradas = (ee.data||[]).map(x=>({...x,_item:x.epi_nome,_qtd:x.quantidade,_tipo:'entrada',_cat:'epi'}));
+  dados.obras     = (o.data||[]).map(x=>x.nome);
   dados.funcionarios = (fn.data||[]).map(x=>x.nome);
 }
 
