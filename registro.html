@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>ProAlmoxarife — Registro</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --ink:#09090b;--ink1:#111116;--ink2:#18181f;--ink3:#22222d;
@@ -138,11 +139,59 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opa
 </div>
 
 <script>
+const SUPABASE_URL = 'https://cahyauugshenwqbxvigg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let db={fsaidas:[],fentradas:[],esaidas:[],eentradas:[],obras:[],funcionarios:[]};
 let tipo='ferr';
 
-function load(){
-  // Tentar todas as chaves possíveis do localStorage
+async function load(){
+  // Mostrar loading
+  document.getElementById('lista').innerHTML='<div class="empty"><span class="empty-ico" style="opacity:1">⏳</span>Carregando dados...</div>';
+
+  try{
+    // Tentar Supabase
+    const {data:{session}} = await sb.auth.getSession();
+    
+    if(session){
+      const uid = session.user.id;
+      const [fs,fe,es,ee,o,fn] = await Promise.all([
+        sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(500),
+        sb.from('mov_ferramentas').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(500),
+        sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','saida').order('created_at',{ascending:false}).limit(500),
+        sb.from('mov_epis').select('*').eq('user_id',uid).eq('tipo','entrada').order('created_at',{ascending:false}).limit(500),
+        sb.from('obras').select('nome').eq('user_id',uid),
+        sb.from('funcionarios').select('nome').eq('user_id',uid),
+      ]);
+      db.fsaidas    = (fs.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade,hora:x.hora||'',data:x.data||new Date(x.created_at).toLocaleDateString('pt-BR')}));
+      db.fentradas  = (fe.data||[]).map(x=>({...x,ferramenta:x.ferramenta_nome,qtd:x.quantidade,hora:x.hora||'',data:x.data||new Date(x.created_at).toLocaleDateString('pt-BR')}));
+      db.esaidas    = (es.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade,hora:x.hora||'',data:x.data||new Date(x.created_at).toLocaleDateString('pt-BR')}));
+      db.eentradas  = (ee.data||[]).map(x=>({...x,epi:x.epi_nome,qtd:x.quantidade,hora:x.hora||'',data:x.data||new Date(x.created_at).toLocaleDateString('pt-BR')}));
+      db.obras      = (o.data||[]).map(x=>x.nome);
+      db.funcionarios=(fn.data||[]).map(x=>x.nome);
+    } else {
+      // Sem sessão - tentar localStorage
+      loadLocal();
+    }
+  } catch(e){
+    // Erro - tentar localStorage
+    loadLocal();
+  }
+
+  // Preencher filtros de obra e funcionário
+  const fo=document.getElementById('f-obra');
+  const ff=document.getElementById('f-func');
+  // Limpar antes de preencher
+  while(fo.options.length>1) fo.remove(1);
+  while(ff.options.length>1) ff.remove(1);
+  db.obras.forEach(o=>{const op=document.createElement('option');op.value=o;op.textContent=o;fo.appendChild(op)});
+  db.funcionarios.forEach(f=>{const op=document.createElement('option');op.value=f;op.textContent=f;ff.appendChild(op)});
+
+  render();
+}
+
+function loadLocal(){
   const keys=['ferrpro_local','ferrpro_v4','ferrpro_v3'];
   for(const k of keys){
     try{
@@ -161,14 +210,6 @@ function load(){
       }
     }catch(e){}
   }
-
-  // Preencher filtros de obra e funcionário
-  const fo=document.getElementById('f-obra');
-  const ff=document.getElementById('f-func');
-  db.obras.forEach(o=>{const op=document.createElement('option');op.value=o;op.textContent=o;fo.appendChild(op)});
-  db.funcionarios.forEach(f=>{const op=document.createElement('option');op.value=f;op.textContent=f;ff.appendChild(op)});
-
-  render();
 }
 
 function setTipo(t,btn){
