@@ -134,14 +134,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   <!-- FILTROS -->
   <div class="filtros">
     <div class="sw">
-      <select id="f-mov" class="fs" onchange="renderLista()">
+      <select id="f-mov" class="fs" onchange="if(carregado)renderLista()">
         <option value="todos">↑↓ Todos</option>
         <option value="saida">↑ Saídas</option>
         <option value="entrada">↓ Entradas</option>
       </select>
     </div>
     <div class="sw">
-      <select id="f-periodo" class="fs" onchange="renderLista()">
+      <select id="f-periodo" class="fs" onchange="if(carregado)renderLista()">
         <option value="todos">Todo período</option>
         <option value="hoje">Hoje</option>
         <option value="semana">Esta semana</option>
@@ -150,12 +150,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       </select>
     </div>
     <div class="sw">
-      <select id="f-obra" class="fs" onchange="renderLista()">
+      <select id="f-obra" class="fs" onchange="if(carregado)renderLista()">
         <option value="todas">Todas obras</option>
       </select>
     </div>
     <div class="sw">
-      <select id="f-func" class="fs" onchange="renderLista()">
+      <select id="f-func" class="fs" onchange="if(carregado)renderLista()">
         <option value="todos">Todos funcs.</option>
       </select>
     </div>
@@ -164,7 +164,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   <!-- BUSCA -->
   <div class="busca">
     <span style="color:var(--fog);font-size:14px">⌕</span>
-    <input id="busca-inp" placeholder="Buscar ferramenta, funcionário, obra..." oninput="renderLista()">
+    <input id="busca-inp" placeholder="Buscar ferramenta, funcionário, obra..." oninput="if(carregado)renderLista()">
   </div>
 
   <!-- STATS -->
@@ -220,6 +220,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let USER = null;
 let tipoAtual = 'ferramentas';
+let carregado = false;
 let dados = { fsaidas:[], fentradas:[], esaidas:[], eentradas:[], obras:[], funcionarios:[] };
 
 async function init(){
@@ -229,6 +230,7 @@ async function init(){
     USER = session.user;
     await loadDados();
     preencherFiltros();
+    carregado = true;
     renderLista();
   } catch(e){
     console.error('Erro init:', e);
