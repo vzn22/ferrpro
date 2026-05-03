@@ -125,9 +125,17 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opa
     <button class="btn-csv" onclick="baixarCSV()">📥 Baixar CSV</button>
   </div>
 
-  <div class="sheets-msg" id="smsg">
-    ✅ <strong>Arquivo baixado!</strong> No Google Sheets: <strong>Arquivo → Importar → Upload</strong> → selecione o CSV → <strong>Importar dados</strong>
-    <button onclick="document.getElementById('smsg').style.display='none'" style="float:right;background:none;border:none;color:#0f9d58;cursor:pointer;font-size:16px">✕</button>
+  <div class="sheets-msg" id="smsg" style="display:none">
+    <div style="margin-bottom:10px;font-weight:800;font-size:14px">📊 Como importar no Google Sheets:</div>
+    <div style="line-height:2">
+      1️⃣ O arquivo CSV foi baixado no seu celular/computador<br>
+      2️⃣ No Google Sheets que abriu clique em <strong>Arquivo</strong><br>
+      3️⃣ Clique em <strong>Importar</strong><br>
+      4️⃣ Clique em <strong>Fazer upload</strong><br>
+      5️⃣ Selecione o arquivo CSV baixado<br>
+      6️⃣ Clique em <strong>Importar dados</strong> ✅
+    </div>
+    <button onclick="document.getElementById('smsg').style.display='none'" style="margin-top:10px;background:none;border:1px solid #0f9d58;color:#0f9d58;padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700;width:100%">Entendi ✓</button>
   </div>
 
   <div class="count-bar">
