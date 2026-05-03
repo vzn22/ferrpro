@@ -224,22 +224,42 @@ let carregado = false;
 let dados = { fsaidas:[], fentradas:[], esaidas:[], eentradas:[], obras:[], funcionarios:[] };
 
 async function init(){
-  try{
-    const {data:{session}} = await sb.auth.getSession();
-    if(!session){ window.location.href='login.html'; return; }
-    USER = session.user;
-    await loadDados();
-    preencherFiltros();
-    carregado = true;
-    renderLista();
+  document.getElementById('lista').innerHTML = '<div class="loading"><span class="spin"></span>Carregando...</div>';
+  
+  try {
+    // Try Supabase first
+    const {data:{session}, error} = await sb.auth.getSession();
+    
+    if(session && !error){
+      USER = session.user;
+      await loadDados();
+    } else {
+      // Fallback: usar dados do localStorage (modo offline)
+      loadLocal();
+    }
   } catch(e){
-    console.error('Erro init:', e);
-    document.getElementById('lista').innerHTML = `
-      <div class="empty">
-        <span class="empty-ico">⚠️</span>
-        <div class="empty-txt">Erro ao carregar dados.<br><button onclick="init()" style="margin-top:10px;background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:var(--sans);font-weight:700">Tentar novamente</button></div>
-      </div>`;
+    // Fallback: usar dados do localStorage
+    loadLocal();
   }
+  
+  preencherFiltros();
+  carregado = true;
+  renderLista();
+}
+
+function loadLocal(){
+  try{
+    const r = localStorage.getItem('ferrpro_local');
+    if(r){
+      const d = JSON.parse(r);
+      dados.fsaidas   = (d.fsaidas||[]).map(x=>({...x,_item:x.ferramenta,_qtd:x.qtd,_tipo:'saida',_cat:'ferr'}));
+      dados.fentradas = (d.fentradas||[]).map(x=>({...x,_item:x.ferramenta,_qtd:x.qtd,_tipo:'entrada',_cat:'ferr'}));
+      dados.esaidas   = (d.esaidas||[]).map(x=>({...x,_item:x.epi,_qtd:x.qtd,_tipo:'saida',_cat:'epi'}));
+      dados.eentradas = (d.eentradas||[]).map(x=>({...x,_item:x.epi,_qtd:x.qtd,_tipo:'entrada',_cat:'epi'}));
+      dados.obras     = d.obras||[];
+      dados.funcionarios = d.funcionarios||[];
+    }
+  } catch(e){ console.error('Erro localStorage:', e); }
 }
 
 async function loadDados(){
