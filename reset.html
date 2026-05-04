@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#09090b">
+<title>ProAlmoxarife — Nova Senha</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#09090b;--ink2:#18181f;--ink3:#22222d;
+  --wire:rgba(255,255,255,.07);--wire2:rgba(255,255,255,.12);
+  --gold:#e8a020;--gold2:#ffbe4d;
+  --rose:#f43f5e;--lime:#84cc16;
+  --snow:#fafafa;--mist:#71717a;--fog:#3f3f46;
+  --sans:'Figtree',sans-serif;--disp:'Bebas Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--snow);font-family:var(--sans);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,rgba(232,160,32,.12) 0%,transparent 60%)}
+.box{position:relative;z-index:1;width:100%;max-width:420px}
+.brand{text-align:center;margin-bottom:32px}
+.brand-name{font-family:var(--disp);font-size:36px;letter-spacing:3px}
+.brand-name em{color:var(--gold);font-style:normal}
+.brand-sub{font-size:13px;color:var(--mist);margin-top:4px}
+.card{background:var(--ink2);border:1px solid var(--wire);border-radius:20px;padding:32px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.card-icon{text-align:center;font-size:48px;margin-bottom:16px}
+.card-title{font-family:var(--disp);font-size:24px;letter-spacing:1px;text-align:center;margin-bottom:8px}
+.card-sub{font-size:13px;color:var(--mist);text-align:center;margin-bottom:24px;line-height:1.6}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--fog);margin-bottom:7px}
+.fi{width:100%;background:var(--ink3);border:1px solid var(--wire2);border-radius:10px;padding:14px 15px;color:var(--snow);font-family:var(--sans);font-size:16px;font-weight:500;outline:none;transition:all .2s;-webkit-appearance:none}
+.fi:focus{border-color:var(--gold);background:rgba(232,160,32,.04);box-shadow:0 0 0 3px rgba(232,160,32,.09)}
+.fi::placeholder{color:var(--fog)}
+.btn{width:100%;padding:15px;border:none;border-radius:10px;font-family:var(--disp);font-size:18px;letter-spacing:1px;cursor:pointer;transition:all .15s;margin-top:4px}
+.btn:active{transform:scale(.975)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#000;box-shadow:0 8px 24px rgba(232,160,32,.25)}
+.err{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--rose);margin-bottom:14px;display:none}
+.err.show{display:block}
+.ok{background:rgba(132,204,22,.1);border:1px solid rgba(132,204,22,.2);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--lime);margin-bottom:14px;display:none}
+.ok.show{display:block}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pwd-strength{height:4px;border-radius:2px;margin-top:6px;transition:all .3s;background:var(--ink3)}
+.foot{text-align:center;margin-top:20px;font-size:13px;color:var(--mist)}
+.foot a{color:var(--gold);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="brand">
+    <div class="brand-name">Pro<em>Almoxarife</em></div>
+    <div class="brand-sub">Sistema de Controle para Obras</div>
+  </div>
+
+  <div class="card" id="card-reset">
+    <div class="card-icon">🔑</div>
+    <div class="card-title">Nova Senha</div>
+    <div class="card-sub">Digite sua nova senha abaixo</div>
+
+    <div class="err" id="reset-err"></div>
+    <div class="ok" id="reset-ok"></div>
+
+    <div class="fg">
+      <label class="fl">Nova Senha</label>
+      <input id="new-pass" class="fi" type="password" placeholder="Mínimo 6 caracteres" oninput="checkStrength(this.value)">
+      <div class="pwd-strength" id="pwd-strength"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">Confirmar Senha</label>
+      <input id="confirm-pass" class="fi" type="password" placeholder="Repita a senha">
+    </div>
+    <button class="btn btn-gold" id="btn-reset" onclick="doReset()">✅ Salvar Nova Senha</button>
+  </div>
+
+  <!-- SUCESSO -->
+  <div class="card" id="card-sucesso" style="display:none">
+    <div class="card-icon">🎉</div>
+    <div class="card-title">Senha Alterada!</div>
+    <div class="card-sub">Sua senha foi redefinida com sucesso. Faça login com a nova senha.</div>
+    <a href="login.html" class="btn btn-gold" style="display:block;text-align:center;text-decoration:none;padding:15px;border-radius:10px;font-family:var(--disp);font-size:18px;letter-spacing:1px;margin-top:8px">→ Ir para o Login</a>
+  </div>
+
+  <div class="foot"><a href="login.html">← Voltar ao login</a></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cahyauugshenwqbxvigg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_u5imZFPtALYuUNoSZmi6rA_UCS9CkPr';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function checkStrength(pass){
+  const bar = document.getElementById('pwd-strength');
+  if(pass.length===0){bar.style.background='var(--ink3)';bar.style.width='100%';return}
+  if(pass.length<6){bar.style.background='var(--rose)';bar.style.width='30%'}
+  else if(pass.length<10){bar.style.background='var(--gold)';bar.style.width='60%'}
+  else{bar.style.background='var(--lime)';bar.style.width='100%'}
+}
+
+async function doReset(){
+  const pass = document.getElementById('new-pass').value;
+  const conf = document.getElementById('confirm-pass').value;
+  const btn  = document.getElementById('btn-reset');
+  const err  = document.getElementById('reset-err');
+
+  err.className='err';
+  if(pass.length<6){ err.textContent='Senha deve ter mínimo 6 caracteres'; err.className='err show'; return; }
+  if(pass!==conf)  { err.textContent='As senhas não coincidem'; err.className='err show'; return; }
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Salvando...';
+
+  try{
+    const {error} = await sb.auth.updateUser({password: pass});
+    if(error) throw error;
+    document.getElementById('card-reset').style.display='none';
+    document.getElementById('card-sucesso').style.display='';
+  }catch(e){
+    err.textContent = e.message;
+    err.className='err show';
+    btn.disabled=false;
+    btn.innerHTML='✅ Salvar Nova Senha';
+  }
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Enter') doReset(); });
+</script>
+</body>
+</html>

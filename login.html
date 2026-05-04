@@ -166,6 +166,43 @@ function clearMsgs(){
   });
 }
 
+function showEsqueci(){
+  document.getElementById('form-login').style.display='none';
+  document.getElementById('form-register').style.display='none';
+  document.getElementById('form-esqueci').style.display='';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+}
+
+function voltarLogin(){
+  document.getElementById('form-esqueci').style.display='none';
+  document.getElementById('form-login').style.display='';
+  document.querySelectorAll('.tab')[0].classList.add('on');
+}
+
+async function doEsqueci(){
+  if(!isConfigured) return showErr('esq-err','Configure o Supabase primeiro');
+  const email = document.getElementById('esq-email').value.trim();
+  if(!email) return showErr('esq-err','Informe seu e-mail');
+  
+  const btn = document.getElementById('btn-esq');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Enviando...';
+  
+  try{
+    const {error} = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://vzn22.github.io/ferrpro/reset.html'
+    });
+    if(error) throw error;
+    document.getElementById('esq-ok').textContent='✅ E-mail enviado! Verifique sua caixa de entrada.';
+    document.getElementById('esq-ok').className='ok show';
+    document.getElementById('esq-email').value='';
+  }catch(e){
+    showErr('esq-err', e.message==='User not found'?'E-mail não encontrado':e.message);
+  }
+  btn.disabled=false;
+  btn.innerHTML='📧 Enviar link de recuperação';
+}
+
 async function doLogin(){
   if(!isConfigured) return showErr('login-err','Configure o Supabase primeiro (veja as instruções acima)');
   clearMsgs();
