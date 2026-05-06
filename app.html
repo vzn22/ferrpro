@@ -218,6 +218,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   </div>
 </div>
 
+<!-- TRIAL BANNER -->
+<div id="trial-banner" style="display:none;background:linear-gradient(90deg,rgba(132,204,22,.15),rgba(232,160,32,.15));border-bottom:1px solid rgba(132,204,22,.2);padding:8px 16px;text-align:center;position:relative;z-index:1">
+  <span id="trial-text" style="font-size:13px;font-weight:600;color:var(--lime)"></span>
+  <a href="index.html#pricing" style="margin-left:10px;background:var(--gold);color:#000;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;text-decoration:none;font-family:var(--disp);letter-spacing:.5px">ASSINAR</a>
+</div>
+
 <!-- NAV -->
 <div class="nav" style="display:none" id="nav">
   <button class="nb on"      onclick="go('dash',this)">    <span class="ni">◈</span>Painel</button>
@@ -518,6 +524,40 @@ function showBloqueio(assData){
   }
 }
 
+/* ══ TRIAL BANNER ══ */
+async function checkTrial(email){
+  try{
+    const {data} = await sb.from('assinantes').select('*').eq('email',email.toLowerCase()).single();
+    if(!data) return;
+    
+    const venc = new Date(data.vencimento);
+    const hoje = new Date();
+    const dias = Math.ceil((venc - hoje)/(1000*60*60*24));
+    
+    const banner = document.getElementById('trial-banner');
+    const txt = document.getElementById('trial-text');
+    
+    if(data.plano === 'trial' && dias > 0){
+      banner.style.display = 'block';
+      banner.style.background = dias <= 2 
+        ? 'linear-gradient(90deg,rgba(244,63,94,.15),rgba(244,63,94,.08))' 
+        : 'linear-gradient(90deg,rgba(132,204,22,.15),rgba(232,160,32,.15))';
+      txt.style.color = dias <= 2 ? 'var(--rose)' : 'var(--lime)';
+      if(dias === 1){
+        txt.textContent = '⚠️ Último dia de teste grátis!';
+      } else {
+        txt.textContent = `🎉 ${dias} dias restantes de teste grátis`;
+      }
+    } else if(data.plano !== 'trial' && dias <= 5 && dias > 0){
+      // Assinatura vencendo em breve
+      banner.style.display = 'block';
+      banner.style.background = 'linear-gradient(90deg,rgba(232,160,32,.15),rgba(232,160,32,.08))';
+      txt.style.color = 'var(--gold2)';
+      txt.textContent = `⚠️ Sua assinatura vence em ${dias} dia${dias!==1?'s':''}`;
+    }
+  }catch(e){ /* silencioso */ }
+}
+
 /* ══ INIT ══ */
 async function init(){
   if(!isConfigured){
@@ -569,6 +609,7 @@ async function init(){
     document.querySelectorAll('.screen').forEach(s=>s.style.display='');
     await loadAll();
     renderDash();
+    checkTrial(session.user.email);
   }catch(e){
     window.location.href='login.html';
   }
