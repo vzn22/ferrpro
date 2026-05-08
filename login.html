@@ -95,7 +95,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="err" id="login-err"></div>
       <div class="ok" id="login-ok"></div>
       <div class="fg"><label class="fl">E-mail</label><input id="login-email" class="fi" type="email" placeholder="seu@email.com"></div>
-      <div class="fg"><label class="fl">Senha</label><input id="login-pass" class="fi" type="password" placeholder="••••••••"></div>
+      <div class="fg">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <label class="fl" style="margin:0">Senha</label>
+          <button onclick="showEsqueci()" type="button" style="background:none;border:none;color:var(--gold2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">Esqueci minha senha</button>
+        </div>
+        <input id="login-pass" class="fi" type="password" placeholder="••••••••">
+      </div>
       <button class="btn btn-gold" id="btn-login" onclick="doLogin()">Entrar</button>
       <div class="divider">ou</div>
       <button class="btn" style="background:var(--ink3);color:var(--snow);border:1px solid var(--wire2)" onclick="showTab('register',document.querySelectorAll('.tab')[1])">Criar Conta</button>
